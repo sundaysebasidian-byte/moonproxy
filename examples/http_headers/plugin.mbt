@@ -10,7 +10,7 @@ priv struct HeadersRoot {
 }
 
 ///|
-impl @moonproxy.RootContext for HeadersRoot with on_plugin_start(self, _) {
+impl @moonproxy.RootContext for HeadersRoot with fn on_plugin_start(self, _) {
   let raw = @moonproxy.get_plugin_configuration()
   if raw.length() == 0 {
     return true
@@ -26,8 +26,8 @@ impl @moonproxy.RootContext for HeadersRoot with on_plugin_start(self, _) {
 }
 
 ///|
-impl @moonproxy.RootContext for HeadersRoot with new_http_context(self, _) {
-  Some(HeadersStream::{ root: self })
+impl @moonproxy.RootContext for HeadersRoot with fn new_http_context(self, _) {
+  Some(HeadersStream::{ root: self, })
 }
 
 ///|
@@ -36,7 +36,11 @@ priv struct HeadersStream {
 }
 
 ///|
-impl @moonproxy.HttpContext for HeadersStream with on_request_headers(_, _, _) {
+impl @moonproxy.HttpContext for HeadersStream with fn on_request_headers(
+  _,
+  _,
+  _,
+) {
   let verb = @moonproxy.get_request_header(":method").unwrap_or("-")
   let path = @moonproxy.get_request_header(":path").unwrap_or("-")
   @moonproxy.log_info("\{verb} \{path}")
@@ -44,7 +48,11 @@ impl @moonproxy.HttpContext for HeadersStream with on_request_headers(_, _, _) {
 }
 
 ///|
-impl @moonproxy.HttpContext for HeadersStream with on_response_headers(self, _, _) {
+impl @moonproxy.HttpContext for HeadersStream with fn on_response_headers(
+  self,
+  _,
+  _,
+) {
   @moonproxy.replace_response_header(self.root.name, self.root.value)
   Continue
 }
@@ -52,6 +60,6 @@ impl @moonproxy.HttpContext for HeadersStream with on_response_headers(self, _, 
 ///|
 fn init {
   @moonproxy.set_root_context(fn(_) {
-    HeadersRoot::{ name: "x-powered-by", value: "moonproxy" }
+    HeadersRoot::{ name: "x-powered-by", value: "moonproxy", }
   })
 }

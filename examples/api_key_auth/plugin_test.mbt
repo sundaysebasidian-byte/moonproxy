@@ -3,7 +3,9 @@ fn setup() -> @proxytest.HostEmulator {
   let emu = @proxytest.HostEmulator::new(
     plugin_config=b"{\"keys\": {\"k-123\": \"alice\"}}",
   )
-  assert_true(emu.start()) catch { _ => abort("start failed") }
+  assert_true(emu.start()) catch {
+    _ => abort("start failed")
+  }
   emu
 }
 
@@ -59,7 +61,10 @@ test "a client cannot smuggle its own x-consumer" {
     ("x-consumer", "admin"),
     ("x-api-key", "k-123"),
   ])
-  debug_inspect(emu.request_headers(id), content="[(\"x-consumer\", \"alice\")]")
+  debug_inspect(
+    emu.request_headers(id),
+    content="[(\"x-consumer\", \"alice\")]",
+  )
 }
 
 ///|

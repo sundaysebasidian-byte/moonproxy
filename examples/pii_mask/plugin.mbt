@@ -20,7 +20,7 @@ priv struct MaskRoot {
 }
 
 ///|
-impl @moonproxy.RootContext for MaskRoot with on_plugin_start(self, _) {
+impl @moonproxy.RootContext for MaskRoot with fn on_plugin_start(self, _) {
   self.masked = Some(@moonproxy.Metric::counter("pii_mask.masked_responses"))
   self.skipped = Some(@moonproxy.Metric::counter("pii_mask.skipped_encoded"))
   true
@@ -28,13 +28,13 @@ impl @moonproxy.RootContext for MaskRoot with on_plugin_start(self, _) {
 
 ///|
 /// If masking fails, the response must not go out unmasked: reset it.
-impl @moonproxy.RootContext for MaskRoot with error_policy(_) {
+impl @moonproxy.RootContext for MaskRoot with fn error_policy(_) {
   FailClosed
 }
 
 ///|
-impl @moonproxy.RootContext for MaskRoot with new_http_context(self, _) {
-  Some(MaskStream::{ root: self, active: false })
+impl @moonproxy.RootContext for MaskRoot with fn new_http_context(self, _) {
+  Some(MaskStream::{ root: self, active: false, })
 }
 
 ///|
@@ -53,13 +53,17 @@ fn is_text(content_type : String) -> Bool {
 }
 
 ///|
-impl @moonproxy.HttpContext for MaskStream with on_request_headers(_, _, _) {
+impl @moonproxy.HttpContext for MaskStream with fn on_request_headers(_, _, _) {
   @moonproxy.remove_request_header("accept-encoding")
   Continue
 }
 
 ///|
-impl @moonproxy.HttpContext for MaskStream with on_response_headers(self, _, _) {
+impl @moonproxy.HttpContext for MaskStream with fn on_response_headers(
+  self,
+  _,
+  _,
+) {
   let ct = @moonproxy.get_response_header("content-type").unwrap_or("")
   if !is_text(ct) {
     return Continue
@@ -76,7 +80,11 @@ impl @moonproxy.HttpContext for MaskStream with on_response_headers(self, _, _) 
 }
 
 ///|
-impl @moonproxy.HttpContext for MaskStream with on_response_body(self, _, eos) {
+impl @moonproxy.HttpContext for MaskStream with fn on_response_body(
+  self,
+  _,
+  eos,
+) {
   if !self.active {
     return Continue
   }
@@ -89,7 +97,7 @@ impl @moonproxy.HttpContext for MaskStream with on_response_body(self, _, eos) {
 ///|
 /// A response with trailers ends with them rather than with an
 /// end-of-stream data frame; mask the buffered body here in that case.
-impl @moonproxy.HttpContext for MaskStream with on_response_trailers(self, _) {
+impl @moonproxy.HttpContext for MaskStream with fn on_response_trailers(self, _) {
   if !self.active {
     return Continue
   }
@@ -112,5 +120,7 @@ fn MaskStream::mask(self : MaskStream) -> @moonproxy.Action raise {
 
 ///|
 fn init {
-  @moonproxy.set_root_context(fn(_) { MaskRoot::{ masked: None, skipped: None } })
+  @moonproxy.set_root_context(fn(_) {
+    MaskRoot::{ masked: None, skipped: None, }
+  })
 }

@@ -29,7 +29,7 @@ priv struct Limits {
   rate : Int64 // tokens per second
   burst : Int64
   key_header : String? // None: source IP address
-  buckets : Int
+  buckets : Int32
 }
 
 ///|
@@ -43,10 +43,10 @@ priv struct LimitRoot {
 const MILLI : Int64 = 1000L
 
 ///|
-const MAX_CAS_RETRIES : Int = 16
+const MAX_CAS_RETRIES : Int32 = 16
 
 ///|
-const DEFAULT_BUCKETS : Int = 4096
+const DEFAULT_BUCKETS : Int32 = 4096
 
 ///|
 /// Upper bound for `rate_per_second` and `burst`: `burst * 1000 * 1e6`
@@ -55,8 +55,8 @@ const MAX_LIMIT : Int64 = 1_000_000_000L
 
 ///|
 /// FNV-1a, 32 bits: cheap, stable across workers and restarts.
-fn fnv1a(s : String) -> UInt {
-  let mut h : UInt = 2166136261U
+fn fnv1a(s : String) -> UInt32 {
+  let mut h : UInt32 = 2166136261U
   for b in @utf8.encode(s) {
     h = (h ^ b.to_uint()) * 16777619U
   }
@@ -66,7 +66,8 @@ fn fnv1a(s : String) -> UInt {
 ///|
 /// Shared-data key of the bucket that `client` falls into.
 fn bucket_key(limits : Limits, client : String) -> String {
-  "rate_limit:" + (fnv1a(client) % limits.buckets.reinterpret_as_uint()).to_string()
+  "rate_limit:" +
+  (fnv1a(client) % limits.buckets.reinterpret_as_uint()).to_string()
 }
 
 ///|
@@ -95,11 +96,14 @@ fn json_int(v : Json) -> Int64? {
 }
 
 ///|
-impl @moonproxy.RootContext for LimitRoot with on_plugin_start(self, _) {
+impl @moonproxy.RootContext for LimitRoot with fn on_plugin_start(self, _) {
   let cfg = @json.parse(
     @utf8.decode_lossy(@moonproxy.get_plugin_configuration()),
   )
-  guard cfg is { "rate_per_second": rate, .. } && json_int(rate) is Some(r) && r > 0L && r <= MAX_LIMIT else {
+  guard cfg is { "rate_per_second": rate, .. } &&
+    json_int(rate) is Some(r) &&
+    r > 0L &&
+    r <= MAX_LIMIT else {
     @moonproxy.log_error("rate_limit: rate_per_second must be 1..1000000000")
     return false
   }
@@ -130,15 +134,15 @@ impl @moonproxy.RootContext for LimitRoot with on_plugin_start(self, _) {
       }
     _ => DEFAULT_BUCKETS
   }
-  self.limits = { rate: r, burst, key_header, buckets }
+  self.limits = { rate: r, burst, key_header, buckets, }
   self.allowed = Some(@moonproxy.Metric::counter("rate_limit.allowed"))
   self.limited = Some(@moonproxy.Metric::counter("rate_limit.limited"))
   true
 }
 
 ///|
-impl @moonproxy.RootContext for LimitRoot with new_http_context(self, _) {
-  Some(LimitStream::{ root: self })
+impl @moonproxy.RootContext for LimitRoot with fn new_http_context(self, _) {
+  Some(LimitStream::{ root: self, })
 }
 
 ///|
@@ -162,7 +166,7 @@ fn Bucket::parse(b : Bytes) -> Bucket? {
   guard decimal(t) is Some(tokens) && decimal(n) is Some(nanos) else {
     return None
   }
-  Some({ milli_tokens: tokens, at_nanos: nanos })
+  Some({ milli_tokens: tokens, at_nanos: nanos, })
 }
 
 ///|
@@ -198,7 +202,7 @@ fn Bucket::encode(self : Bucket) -> Bytes {
 /// Only the time actually turned into milli-tokens is consumed from the
 /// clock (`at_nanos` advances by that much), so requests that arrive faster
 /// than one milli-token apart still add up instead of being rounded away.
-fn take(limits : Limits, prev : Bucket?, now : Int64) -> (Bucket, Int?) {
+fn take(limits : Limits, prev : Bucket?, now : Int64) -> (Bucket, Int32?) {
   let cap = limits.burst * MILLI
   let (current, at) = match prev {
     None => (cap, now)
@@ -221,18 +225,21 @@ fn take(limits : Limits, prev : Bucket?, now : Int64) -> (Bucket, Int?) {
     }
   }
   if current >= MILLI {
-    ({ milli_tokens: current - MILLI, at_nanos: at }, None)
+    ({ milli_tokens: current - MILLI, at_nanos: at, }, None)
   } else {
     let missing = MILLI - current
     let wait_ms = (missing + limits.rate - 1L) / limits.rate
     let wait_s = ((wait_ms + 999L) / 1000L).to_int()
-    ({ milli_tokens: current, at_nanos: at }, Some(if wait_s < 1 { 1 } else { wait_s }))
+    (
+      { milli_tokens: current, at_nanos: at, },
+      Some(if wait_s < 1 { 1 } else { wait_s }),
+    )
   }
 }
 
 ///|
 /// Run `take` against shared data with optimistic concurrency.
-fn acquire(limits : Limits, client : String) -> Int? raise {
+fn acquire(limits : Limits, client : String) -> Int32? raise {
   let key = bucket_key(limits, client)
   for attempt = 0; attempt < MAX_CAS_RETRIES; attempt = attempt + 1 {
     let now = @moonproxy.current_time_nanos()
@@ -253,7 +260,11 @@ fn acquire(limits : Limits, client : String) -> Int? raise {
 }
 
 ///|
-impl @moonproxy.HttpContext for LimitStream with on_request_headers(self, _, _) {
+impl @moonproxy.HttpContext for LimitStream with fn on_request_headers(
+  self,
+  _,
+  _,
+) {
   let root = self.root
   let client = match root.limits.key_header {
     Some(h) => "h:" + @moonproxy.get_request_header(h).unwrap_or("")
@@ -289,7 +300,12 @@ impl @moonproxy.HttpContext for LimitStream with on_request_headers(self, _, _) 
 fn init {
   @moonproxy.set_root_context(fn(_) {
     LimitRoot::{
-      limits: { rate: 1L, burst: 1L, key_header: None, buckets: DEFAULT_BUCKETS },
+      limits: {
+        rate: 1L,
+        burst: 1L,
+        key_header: None,
+        buckets: DEFAULT_BUCKETS,
+      },
       allowed: None,
       limited: None,
     }

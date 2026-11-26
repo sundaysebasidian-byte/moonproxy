@@ -1,4 +1,4 @@
 import {
-  "sundaysebasidian-byte/moonproxy" @moonproxy,
+  "sundaysebasidian-byte/moonproxy",
   "moonbitlang/core/encoding/utf8",
 }

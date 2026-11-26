@@ -7,167 +7,193 @@
 /// (`memory_allocate` below) and then adopted as a `Bytes` without copying.
 
 ///|
-fn proxy_log(level : Int, ptr : Int, len : Int) -> Int = "env" "proxy_log"
+fn proxy_log(level : Int32, ptr : Int32, len : Int32) -> Int32 = "env" "proxy_log"
 
 ///|
-fn proxy_get_log_level(ret : Int) -> Int = "env" "proxy_get_log_level"
+fn proxy_get_log_level(ret : Int32) -> Int32 = "env" "proxy_get_log_level"
 
 ///|
-fn proxy_get_current_time_nanoseconds(ret : Int) -> Int = "env" "proxy_get_current_time_nanoseconds"
+fn proxy_get_current_time_nanoseconds(ret : Int32) -> Int32 = "env" "proxy_get_current_time_nanoseconds"
 
 ///|
-fn proxy_set_tick_period_milliseconds(ms : Int) -> Int = "env" "proxy_set_tick_period_milliseconds"
+fn proxy_set_tick_period_milliseconds(ms : Int32) -> Int32 = "env" "proxy_set_tick_period_milliseconds"
 
 ///|
 fn proxy_get_buffer_bytes(
-  kind : Int,
-  start : Int,
-  max : Int,
-  ret_ptr : Int,
-  ret_len : Int,
-) -> Int = "env" "proxy_get_buffer_bytes"
+  kind : Int32,
+  start : Int32,
+  max : Int32,
+  ret_ptr : Int32,
+  ret_len : Int32,
+) -> Int32 = "env" "proxy_get_buffer_bytes"
 
 ///|
 fn proxy_set_buffer_bytes(
-  kind : Int,
-  start : Int,
-  size : Int,
-  ptr : Int,
-  len : Int,
-) -> Int = "env" "proxy_set_buffer_bytes"
+  kind : Int32,
+  start : Int32,
+  size : Int32,
+  ptr : Int32,
+  len : Int32,
+) -> Int32 = "env" "proxy_set_buffer_bytes"
 
 ///|
-fn proxy_get_header_map_pairs(kind : Int, ret_ptr : Int, ret_len : Int) -> Int = "env" "proxy_get_header_map_pairs"
+fn proxy_get_header_map_pairs(
+  kind : Int32,
+  ret_ptr : Int32,
+  ret_len : Int32,
+) -> Int32 = "env" "proxy_get_header_map_pairs"
 
 ///|
-fn proxy_set_header_map_pairs(kind : Int, ptr : Int, len : Int) -> Int = "env" "proxy_set_header_map_pairs"
+fn proxy_set_header_map_pairs(kind : Int32, ptr : Int32, len : Int32) -> Int32 = "env" "proxy_set_header_map_pairs"
 
 ///|
 fn proxy_get_header_map_value(
-  kind : Int,
-  kptr : Int,
-  klen : Int,
-  ret_ptr : Int,
-  ret_len : Int,
-) -> Int = "env" "proxy_get_header_map_value"
+  kind : Int32,
+  kptr : Int32,
+  klen : Int32,
+  ret_ptr : Int32,
+  ret_len : Int32,
+) -> Int32 = "env" "proxy_get_header_map_value"
 
 ///|
 fn proxy_replace_header_map_value(
-  kind : Int,
-  kptr : Int,
-  klen : Int,
-  vptr : Int,
-  vlen : Int,
-) -> Int = "env" "proxy_replace_header_map_value"
+  kind : Int32,
+  kptr : Int32,
+  klen : Int32,
+  vptr : Int32,
+  vlen : Int32,
+) -> Int32 = "env" "proxy_replace_header_map_value"
 
 ///|
 fn proxy_add_header_map_value(
-  kind : Int,
-  kptr : Int,
-  klen : Int,
-  vptr : Int,
-  vlen : Int,
-) -> Int = "env" "proxy_add_header_map_value"
+  kind : Int32,
+  kptr : Int32,
+  klen : Int32,
+  vptr : Int32,
+  vlen : Int32,
+) -> Int32 = "env" "proxy_add_header_map_value"
 
 ///|
-fn proxy_remove_header_map_value(kind : Int, kptr : Int, klen : Int) -> Int = "env" "proxy_remove_header_map_value"
+fn proxy_remove_header_map_value(
+  kind : Int32,
+  kptr : Int32,
+  klen : Int32,
+) -> Int32 = "env" "proxy_remove_header_map_value"
 
 ///|
 fn proxy_get_property(
-  pptr : Int,
-  plen : Int,
-  ret_ptr : Int,
-  ret_len : Int,
-) -> Int = "env" "proxy_get_property"
+  pptr : Int32,
+  plen : Int32,
+  ret_ptr : Int32,
+  ret_len : Int32,
+) -> Int32 = "env" "proxy_get_property"
 
 ///|
-fn proxy_set_property(pptr : Int, plen : Int, vptr : Int, vlen : Int) -> Int = "env" "proxy_set_property"
+fn proxy_set_property(
+  pptr : Int32,
+  plen : Int32,
+  vptr : Int32,
+  vlen : Int32,
+) -> Int32 = "env" "proxy_set_property"
 
 ///|
 fn proxy_get_shared_data(
-  kptr : Int,
-  klen : Int,
-  ret_ptr : Int,
-  ret_len : Int,
-  ret_cas : Int,
-) -> Int = "env" "proxy_get_shared_data"
+  kptr : Int32,
+  klen : Int32,
+  ret_ptr : Int32,
+  ret_len : Int32,
+  ret_cas : Int32,
+) -> Int32 = "env" "proxy_get_shared_data"
 
 ///|
 fn proxy_set_shared_data(
-  kptr : Int,
-  klen : Int,
-  vptr : Int,
-  vlen : Int,
-  cas : Int,
-) -> Int = "env" "proxy_set_shared_data"
+  kptr : Int32,
+  klen : Int32,
+  vptr : Int32,
+  vlen : Int32,
+  cas : Int32,
+) -> Int32 = "env" "proxy_set_shared_data"
 
 ///|
-fn proxy_register_shared_queue(nptr : Int, nlen : Int, ret_id : Int) -> Int = "env" "proxy_register_shared_queue"
+fn proxy_register_shared_queue(
+  nptr : Int32,
+  nlen : Int32,
+  ret_id : Int32,
+) -> Int32 = "env" "proxy_register_shared_queue"
 
 ///|
 fn proxy_resolve_shared_queue(
-  vptr : Int,
-  vlen : Int,
-  nptr : Int,
-  nlen : Int,
-  ret_id : Int,
-) -> Int = "env" "proxy_resolve_shared_queue"
+  vptr : Int32,
+  vlen : Int32,
+  nptr : Int32,
+  nlen : Int32,
+  ret_id : Int32,
+) -> Int32 = "env" "proxy_resolve_shared_queue"
 
 ///|
-fn proxy_enqueue_shared_queue(id : Int, ptr : Int, len : Int) -> Int = "env" "proxy_enqueue_shared_queue"
+fn proxy_enqueue_shared_queue(id : Int32, ptr : Int32, len : Int32) -> Int32 = "env" "proxy_enqueue_shared_queue"
 
 ///|
-fn proxy_dequeue_shared_queue(id : Int, ret_ptr : Int, ret_len : Int) -> Int = "env" "proxy_dequeue_shared_queue"
+fn proxy_dequeue_shared_queue(
+  id : Int32,
+  ret_ptr : Int32,
+  ret_len : Int32,
+) -> Int32 = "env" "proxy_dequeue_shared_queue"
 
 ///|
-fn proxy_continue_stream(kind : Int) -> Int = "env" "proxy_continue_stream"
+fn proxy_continue_stream(kind : Int32) -> Int32 = "env" "proxy_continue_stream"
 
 ///|
-fn proxy_close_stream(kind : Int) -> Int = "env" "proxy_close_stream"
+fn proxy_close_stream(kind : Int32) -> Int32 = "env" "proxy_close_stream"
 
 ///|
 fn proxy_send_local_response(
-  code : Int,
-  dptr : Int,
-  dlen : Int,
-  bptr : Int,
-  blen : Int,
-  hptr : Int,
-  hlen : Int,
-  grpc : Int,
-) -> Int = "env" "proxy_send_local_response"
+  code : Int32,
+  dptr : Int32,
+  dlen : Int32,
+  bptr : Int32,
+  blen : Int32,
+  hptr : Int32,
+  hlen : Int32,
+  grpc : Int32,
+) -> Int32 = "env" "proxy_send_local_response"
 
 ///|
 fn proxy_http_call(
-  uptr : Int,
-  ulen : Int,
-  hptr : Int,
-  hlen : Int,
-  bptr : Int,
-  blen : Int,
-  tptr : Int,
-  tlen : Int,
-  timeout : Int,
-  ret_token : Int,
-) -> Int = "env" "proxy_http_call"
+  uptr : Int32,
+  ulen : Int32,
+  hptr : Int32,
+  hlen : Int32,
+  bptr : Int32,
+  blen : Int32,
+  tptr : Int32,
+  tlen : Int32,
+  timeout : Int32,
+  ret_token : Int32,
+) -> Int32 = "env" "proxy_http_call"
 
 ///|
-fn proxy_set_effective_context(id : Int) -> Int = "env" "proxy_set_effective_context"
+fn proxy_set_effective_context(id : Int32) -> Int32 = "env" "proxy_set_effective_context"
 
 ///|
-fn proxy_done() -> Int = "env" "proxy_done"
+fn proxy_done() -> Int32 = "env" "proxy_done"
 
 ///|
-fn proxy_define_metric(kind : Int, nptr : Int, nlen : Int, ret_id : Int) -> Int = "env" "proxy_define_metric"
+fn proxy_define_metric(
+  kind : Int32,
+  nptr : Int32,
+  nlen : Int32,
+  ret_id : Int32,
+) -> Int32 = "env" "proxy_define_metric"
 
 ///|
-fn proxy_increment_metric(id : Int, delta : Int64) -> Int = "env" "proxy_increment_metric"
+fn proxy_increment_metric(id : Int32, delta : Int64) -> Int32 = "env" "proxy_increment_metric"
 
 ///|
-fn proxy_record_metric(id : Int, value : UInt64) -> Int = "env" "proxy_record_metric"
+fn proxy_record_metric(id : Int32, value : UInt64) -> Int32 = "env" "proxy_record_metric"
 
 ///|
-fn proxy_get_metric(id : Int, ret : Int) -> Int = "env" "proxy_get_metric"
+fn proxy_get_metric(id : Int32, ret : Int32) -> Int32 = "env" "proxy_get_metric"
 
 // ---- raw memory helpers -------------------------------------------------
 
@@ -183,50 +209,50 @@ fn proxy_get_metric(id : Int, ret : Int) -> Int = "env" "proxy_get_metric"
 // to be read as a pointer.
 
 ///|
-extern "wasm" fn mem_malloc(size : Int) -> Int =
+extern "wasm" fn mem_malloc(size : Int32) -> Int32 =
   #|(func (param i32) (result i32) (local i32)
   #| local.get 0 i32.const 4 i32.add call $moonbit.gc.malloc
   #| local.tee 1 i32.const 0 call $moonbit.init_array8
   #| local.get 1)
 
 ///|
-extern "wasm" fn mem_free(ptr : Int) =
+extern "wasm" fn mem_free(ptr : Int32) =
   #|(func (param i32) local.get 0 call $moonbit.decref)
 
 ///|
 #owned(bytes)
-extern "wasm" fn bytes_ptr(bytes : Bytes) -> Int =
+extern "wasm" fn bytes_ptr(bytes : Bytes) -> Int32 =
   #|(func (param i32) (result i32) local.get 0)
 
 ///|
-extern "wasm" fn adopt_bytes(ptr : Int, len : Int) -> Bytes =
+extern "wasm" fn adopt_bytes(ptr : Int32, len : Int32) -> Bytes =
   #|(func (param i32) (param i32) (result i32) (local i32)
   #| local.get 0 local.tee 2
   #| local.get 1 call $moonbit.init_array8
   #| local.get 2)
 
 ///|
-extern "wasm" fn load32(ptr : Int) -> Int =
+extern "wasm" fn load32(ptr : Int32) -> Int32 =
   #|(func (param i32) (result i32) local.get 0 i32.load)
 
 ///|
-extern "wasm" fn store32(ptr : Int, value : Int) =
+extern "wasm" fn store32(ptr : Int32, value : Int32) =
   #|(func (param i32) (param i32) local.get 0 local.get 1 i32.store)
 
 ///|
-extern "wasm" fn load64(ptr : Int) -> Int64 =
+extern "wasm" fn load64(ptr : Int32) -> Int64 =
   #|(func (param i32) (result i64) local.get 0 i64.load)
 
 ///|
 /// Entry point for `proxy_on_memory_allocate`.
-pub fn memory_allocate(size : Int) -> Int {
+pub fn memory_allocate(size : Int32) -> Int32 {
   mem_malloc(size)
 }
 
 ///|
 /// Scratch area for host out-parameters (two pointers + a u32/u64).
 priv struct Ret {
-  ptr : Int
+  ptr : Int32
 }
 
 ///|
@@ -239,7 +265,7 @@ fn Ret::new() -> Ret {
 }
 
 ///|
-fn Ret::slot(self : Ret, i : Int) -> Int {
+fn Ret::slot(self : Ret, i : Int32) -> Int32 {
   self.ptr + i * 4
 }
 
@@ -265,12 +291,12 @@ priv struct FfiHost {}
 
 ///|
 fn default_host() -> &Host {
-  FfiHost::{  }
+  FfiHost::{ }
 }
 
 ///|
 /// Call `f(ptr, len)` with a borrowed view of `b`.
-fn[T] with_bytes(b : Bytes, f : (Int, Int) -> T) -> T {
+fn[T] with_bytes(b : Bytes, f : (Int32, Int32) -> T) -> T {
   let len = b.length()
   let p = bytes_ptr(b)
   let r = f(p, len)
@@ -279,12 +305,12 @@ fn[T] with_bytes(b : Bytes, f : (Int, Int) -> T) -> T {
 }
 
 ///|
-fn[T] with_str(s : String, f : (Int, Int) -> T) -> T {
+fn[T] with_str(s : String, f : (Int32, Int32) -> T) -> T {
   with_bytes(@utf8.encode(s), f)
 }
 
 ///|
-fn get_with(call : (Ret) -> Int) -> (Status, Bytes) {
+fn get_with(call : (Ret) -> Int32) -> (Status, Bytes) {
   let ret = Ret::new()
   let st = Status::from_int(call(ret))
   let data = if st == Ok { ret.take_bytes() } else { b"" }
@@ -293,12 +319,12 @@ fn get_with(call : (Ret) -> Int) -> (Status, Bytes) {
 }
 
 ///|
-impl Host for FfiHost with log(_, level, msg) {
+impl Host for FfiHost with fn log(_, level, msg) {
   Status::from_int(with_str(msg, fn(p, l) { proxy_log(level.to_int(), p, l) }))
 }
 
 ///|
-impl Host for FfiHost with get_log_level(_) {
+impl Host for FfiHost with fn get_log_level(_) {
   let ret = Ret::new()
   let st = proxy_get_log_level(ret.ptr)
   let level = if st == 0 { load32(ret.ptr) } else { 0 }
@@ -307,7 +333,7 @@ impl Host for FfiHost with get_log_level(_) {
 }
 
 ///|
-impl Host for FfiHost with get_current_time_nanos(_) {
+impl Host for FfiHost with fn get_current_time_nanos(_) {
   let ret = Ret::new()
   let _ = proxy_get_current_time_nanoseconds(ret.ptr)
   let t = load64(ret.ptr)
@@ -316,19 +342,19 @@ impl Host for FfiHost with get_current_time_nanos(_) {
 }
 
 ///|
-impl Host for FfiHost with set_tick_period_ms(_, ms) {
+impl Host for FfiHost with fn set_tick_period_ms(_, ms) {
   Status::from_int(proxy_set_tick_period_milliseconds(ms))
 }
 
 ///|
-impl Host for FfiHost with get_buffer(_, kind, start, max) {
+impl Host for FfiHost with fn get_buffer(_, kind, start, max) {
   get_with(fn(ret) {
     proxy_get_buffer_bytes(kind.to_int(), start, max, ret.slot(0), ret.slot(1))
   })
 }
 
 ///|
-impl Host for FfiHost with set_buffer(_, kind, start, size, data) {
+impl Host for FfiHost with fn set_buffer(_, kind, start, size, data) {
   Status::from_int(
     with_bytes(data, fn(p, l) {
       proxy_set_buffer_bytes(kind.to_int(), start, size, p, l)
@@ -337,30 +363,38 @@ impl Host for FfiHost with set_buffer(_, kind, start, size, data) {
 }
 
 ///|
-impl Host for FfiHost with get_map_pairs(_, kind) {
+impl Host for FfiHost with fn get_map_pairs(_, kind) {
   get_with(fn(ret) {
     proxy_get_header_map_pairs(kind.to_int(), ret.slot(0), ret.slot(1))
   })
 }
 
 ///|
-impl Host for FfiHost with set_map_pairs(_, kind, data) {
+impl Host for FfiHost with fn set_map_pairs(_, kind, data) {
   Status::from_int(
-    with_bytes(data, fn(p, l) { proxy_set_header_map_pairs(kind.to_int(), p, l) }),
+    with_bytes(data, fn(p, l) {
+      proxy_set_header_map_pairs(kind.to_int(), p, l)
+    }),
   )
 }
 
 ///|
-impl Host for FfiHost with get_map_value(_, kind, key) {
+impl Host for FfiHost with fn get_map_value(_, kind, key) {
   with_str(key, fn(kp, kl) {
     get_with(fn(ret) {
-      proxy_get_header_map_value(kind.to_int(), kp, kl, ret.slot(0), ret.slot(1))
+      proxy_get_header_map_value(
+        kind.to_int(),
+        kp,
+        kl,
+        ret.slot(0),
+        ret.slot(1),
+      )
     })
   })
 }
 
 ///|
-impl Host for FfiHost with replace_map_value(_, kind, key, value) {
+impl Host for FfiHost with fn replace_map_value(_, kind, key, value) {
   Status::from_int(
     with_str(key, fn(kp, kl) {
       with_str(value, fn(vp, vl) {
@@ -371,7 +405,7 @@ impl Host for FfiHost with replace_map_value(_, kind, key, value) {
 }
 
 ///|
-impl Host for FfiHost with add_map_value(_, kind, key, value) {
+impl Host for FfiHost with fn add_map_value(_, kind, key, value) {
   Status::from_int(
     with_str(key, fn(kp, kl) {
       with_str(value, fn(vp, vl) {
@@ -382,21 +416,23 @@ impl Host for FfiHost with add_map_value(_, kind, key, value) {
 }
 
 ///|
-impl Host for FfiHost with remove_map_value(_, kind, key) {
+impl Host for FfiHost with fn remove_map_value(_, kind, key) {
   Status::from_int(
-    with_str(key, fn(kp, kl) { proxy_remove_header_map_value(kind.to_int(), kp, kl) }),
+    with_str(key, fn(kp, kl) {
+      proxy_remove_header_map_value(kind.to_int(), kp, kl)
+    }),
   )
 }
 
 ///|
-impl Host for FfiHost with get_property(_, path) {
+impl Host for FfiHost with fn get_property(_, path) {
   with_bytes(path, fn(pp, pl) {
     get_with(fn(ret) { proxy_get_property(pp, pl, ret.slot(0), ret.slot(1)) })
   })
 }
 
 ///|
-impl Host for FfiHost with set_property(_, path, value) {
+impl Host for FfiHost with fn set_property(_, path, value) {
   Status::from_int(
     with_bytes(path, fn(pp, pl) {
       with_bytes(value, fn(vp, vl) { proxy_set_property(pp, pl, vp, vl) })
@@ -405,7 +441,7 @@ impl Host for FfiHost with set_property(_, path, value) {
 }
 
 ///|
-impl Host for FfiHost with get_shared_data(_, key) {
+impl Host for FfiHost with fn get_shared_data(_, key) {
   with_str(key, fn(kp, kl) {
     let ret = Ret::new()
     let st = Status::from_int(
@@ -422,16 +458,18 @@ impl Host for FfiHost with get_shared_data(_, key) {
 }
 
 ///|
-impl Host for FfiHost with set_shared_data(_, key, value, cas) {
+impl Host for FfiHost with fn set_shared_data(_, key, value, cas) {
   Status::from_int(
     with_str(key, fn(kp, kl) {
-      with_bytes(value, fn(vp, vl) { proxy_set_shared_data(kp, kl, vp, vl, cas) })
+      with_bytes(value, fn(vp, vl) {
+        proxy_set_shared_data(kp, kl, vp, vl, cas)
+      })
     }),
   )
 }
 
 ///|
-fn get_id(call : (Int) -> Int) -> (Status, Int) {
+fn get_id(call : (Int32) -> Int32) -> (Status, Int32) {
   let ret = Ret::new()
   let st = Status::from_int(call(ret.ptr))
   let id = if st == Ok { load32(ret.ptr) } else { 0 }
@@ -440,14 +478,14 @@ fn get_id(call : (Int) -> Int) -> (Status, Int) {
 }
 
 ///|
-impl Host for FfiHost with register_shared_queue(_, name) {
+impl Host for FfiHost with fn register_shared_queue(_, name) {
   with_str(name, fn(np, nl) {
     get_id(fn(r) { proxy_register_shared_queue(np, nl, r) })
   })
 }
 
 ///|
-impl Host for FfiHost with resolve_shared_queue(_, vm_id, name) {
+impl Host for FfiHost with fn resolve_shared_queue(_, vm_id, name) {
   with_str(vm_id, fn(vp, vl) {
     with_str(name, fn(np, nl) {
       get_id(fn(r) { proxy_resolve_shared_queue(vp, vl, np, nl, r) })
@@ -456,29 +494,36 @@ impl Host for FfiHost with resolve_shared_queue(_, vm_id, name) {
 }
 
 ///|
-impl Host for FfiHost with enqueue_shared_queue(_, id, data) {
+impl Host for FfiHost with fn enqueue_shared_queue(_, id, data) {
   Status::from_int(
     with_bytes(data, fn(p, l) { proxy_enqueue_shared_queue(id, p, l) }),
   )
 }
 
 ///|
-impl Host for FfiHost with dequeue_shared_queue(_, id) {
+impl Host for FfiHost with fn dequeue_shared_queue(_, id) {
   get_with(fn(ret) { proxy_dequeue_shared_queue(id, ret.slot(0), ret.slot(1)) })
 }
 
 ///|
-impl Host for FfiHost with continue_stream(_, kind) {
+impl Host for FfiHost with fn continue_stream(_, kind) {
   Status::from_int(proxy_continue_stream(kind.to_int()))
 }
 
 ///|
-impl Host for FfiHost with close_stream(_, kind) {
+impl Host for FfiHost with fn close_stream(_, kind) {
   Status::from_int(proxy_close_stream(kind.to_int()))
 }
 
 ///|
-impl Host for FfiHost with send_local_response(_, code, details, body, headers, grpc) {
+impl Host for FfiHost with fn send_local_response(
+  _,
+  code,
+  details,
+  body,
+  headers,
+  grpc,
+) {
   Status::from_int(
     with_str(details, fn(dp, dl) {
       with_bytes(body, fn(bp, bl) {
@@ -491,7 +536,14 @@ impl Host for FfiHost with send_local_response(_, code, details, body, headers, 
 }
 
 ///|
-impl Host for FfiHost with http_call(_, upstream, headers, body, trailers, timeout) {
+impl Host for FfiHost with fn http_call(
+  _,
+  upstream,
+  headers,
+  body,
+  trailers,
+  timeout,
+) {
   with_str(upstream, fn(up, ul) {
     with_bytes(headers, fn(hp, hl) {
       with_bytes(body, fn(bp, bl) {
@@ -506,34 +558,34 @@ impl Host for FfiHost with http_call(_, upstream, headers, body, trailers, timeo
 }
 
 ///|
-impl Host for FfiHost with set_effective_context(_, id) {
+impl Host for FfiHost with fn set_effective_context(_, id) {
   Status::from_int(proxy_set_effective_context(id))
 }
 
 ///|
-impl Host for FfiHost with done(_) {
+impl Host for FfiHost with fn done(_) {
   Status::from_int(proxy_done())
 }
 
 ///|
-impl Host for FfiHost with define_metric(_, kind, name) {
+impl Host for FfiHost with fn define_metric(_, kind, name) {
   with_str(name, fn(np, nl) {
     get_id(fn(r) { proxy_define_metric(kind.to_int(), np, nl, r) })
   })
 }
 
 ///|
-impl Host for FfiHost with increment_metric(_, id, delta) {
+impl Host for FfiHost with fn increment_metric(_, id, delta) {
   Status::from_int(proxy_increment_metric(id, delta))
 }
 
 ///|
-impl Host for FfiHost with record_metric(_, id, value) {
+impl Host for FfiHost with fn record_metric(_, id, value) {
   Status::from_int(proxy_record_metric(id, value))
 }
 
 ///|
-impl Host for FfiHost with get_metric(_, id) {
+impl Host for FfiHost with fn get_metric(_, id) {
   let ret = Ret::new()
   let st = Status::from_int(proxy_get_metric(id, ret.ptr))
   let v = if st == Ok { load64(ret.ptr).reinterpret_as_uint64() } else { 0 }

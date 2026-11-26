@@ -18,7 +18,7 @@ priv struct QuotaRoot {
 }
 
 ///|
-impl @moonproxy.RootContext for QuotaRoot with on_plugin_start(self, _) {
+impl @moonproxy.RootContext for QuotaRoot with fn on_plugin_start(self, _) {
   let text = @utf8.decode_lossy(@moonproxy.get_plugin_configuration())
   if text != "" {
     let cfg = @json.parse(text) catch {
@@ -38,8 +38,8 @@ impl @moonproxy.RootContext for QuotaRoot with on_plugin_start(self, _) {
 }
 
 ///|
-impl @moonproxy.RootContext for QuotaRoot with new_tcp_context(self, _) {
-  Some(Conn::{ root: self, rx: 0L, tx: 0L, cut: false })
+impl @moonproxy.RootContext for QuotaRoot with fn new_tcp_context(self, _) {
+  Some(Conn::{ root: self, rx: 0L, tx: 0L, cut: false, })
 }
 
 ///|
@@ -53,7 +53,7 @@ priv struct Conn {
 ///|
 fn Conn::account(
   self : Conn,
-  size : Int,
+  size : Int32,
   metric : @moonproxy.Metric?,
 ) -> @moonproxy.Action raise {
   if metric is Some(m) {
@@ -80,19 +80,19 @@ fn Conn::account(
 }
 
 ///|
-impl @moonproxy.TcpContext for Conn with on_downstream_data(self, size, _) {
+impl @moonproxy.TcpContext for Conn with fn on_downstream_data(self, size, _) {
   self.rx += size.to_int64()
   self.account(size, self.root.rx)
 }
 
 ///|
-impl @moonproxy.TcpContext for Conn with on_upstream_data(self, size, _) {
+impl @moonproxy.TcpContext for Conn with fn on_upstream_data(self, size, _) {
   self.tx += size.to_int64()
   self.account(size, self.root.tx)
 }
 
 ///|
-impl @moonproxy.TcpContext for Conn with on_log(self) {
+impl @moonproxy.TcpContext for Conn with fn on_log(self) {
   let client = @moonproxy.get_property_string(["source", "address"]).unwrap_or(
     "-",
   )
@@ -104,6 +104,6 @@ impl @moonproxy.TcpContext for Conn with on_log(self) {
 ///|
 fn init {
   @moonproxy.set_root_context(fn(_) {
-    QuotaRoot::{ max_bytes: 0L, rx: None, tx: None, closed: None }
+    QuotaRoot::{ max_bytes: 0L, rx: None, tx: None, closed: None, }
   })
 }

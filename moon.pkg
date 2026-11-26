@@ -5,8 +5,5 @@ import {
 warnings = "-invalid_inline_wasm"
 
 options(
-  targets: {
-    "host_wasm.mbt": [ "wasm" ],
-    "host_stub.mbt": [ "not", "wasm" ],
-  },
+  targets: { "host_wasm.mbt": [ "wasm" ], "host_stub.mbt": [ "not", "wasm" ] },
 )

@@ -1,7 +1,7 @@
 ///|
 /// A host metric (exported by Envoy as a stat).
 pub struct Metric {
-  id : Int
+  id : Int32
   kind : MetricType
 }
 
@@ -11,7 +11,7 @@ pub struct Metric {
 pub fn Metric::new(kind : MetricType, name : String) -> Metric raise HostError {
   let (st, id) = host().define_metric(kind, name)
   check("define_metric", st)
-  { id, kind }
+  { id, kind, }
 }
 
 ///|
@@ -32,7 +32,10 @@ pub fn Metric::histogram(name : String) -> Metric raise HostError {
 ///|
 /// Add `delta` (counters only accept non-negative deltas). A zero delta is
 /// skipped here: Envoy answers `BadArgument` to a zero counter increment.
-pub fn Metric::increment(self : Metric, delta? : Int64 = 1L) -> Unit raise HostError {
+pub fn Metric::increment(
+  self : Metric,
+  delta~ : Int64 = 1L,
+) -> Unit raise HostError {
   if delta == 0L {
     return
   }

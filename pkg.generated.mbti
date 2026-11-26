@@ -1,0 +1,441 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "sundaysebasidian-byte/moonproxy"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn abi_on_configure(Int32, Int32) -> Int32
+
+pub fn abi_on_context_create(Int32, Int32) -> Unit
+
+pub fn abi_on_delete(Int32) -> Unit
+
+pub fn abi_on_done(Int32) -> Int32
+
+pub fn abi_on_downstream_connection_close(Int32, Int32) -> Unit
+
+pub fn abi_on_downstream_data(Int32, Int32, Int32) -> Int32
+
+pub fn abi_on_http_call_response(Int32, Int32, Int32, Int32, Int32) -> Unit
+
+pub fn abi_on_log(Int32) -> Unit
+
+pub fn abi_on_new_connection(Int32) -> Int32
+
+pub fn abi_on_queue_ready(Int32, Int32) -> Unit
+
+pub fn abi_on_request_body(Int32, Int32, Int32) -> Int32
+
+pub fn abi_on_request_headers(Int32, Int32, Int32) -> Int32
+
+pub fn abi_on_request_trailers(Int32, Int32) -> Int32
+
+pub fn abi_on_response_body(Int32, Int32, Int32) -> Int32
+
+pub fn abi_on_response_headers(Int32, Int32, Int32) -> Int32
+
+pub fn abi_on_response_trailers(Int32, Int32) -> Int32
+
+pub fn abi_on_tick(Int32) -> Unit
+
+pub fn abi_on_upstream_connection_close(Int32, Int32) -> Unit
+
+pub fn abi_on_upstream_data(Int32, Int32, Int32) -> Int32
+
+pub fn abi_on_vm_start(Int32, Int32) -> Int32
+
+pub fn add_header(MapType, String, String) -> Unit raise HostError
+
+pub fn add_request_header(String, String) -> Unit raise HostError
+
+pub fn add_response_header(String, String) -> Unit raise HostError
+
+pub fn append_request_body(Bytes) -> Unit raise HostError
+
+pub fn append_response_body(Bytes) -> Unit raise HostError
+
+pub fn close_downstream() -> Unit raise HostError
+
+pub fn close_upstream() -> Unit raise HostError
+
+pub fn current_context_id() -> Int32
+
+pub fn current_time_nanos() -> Int64
+
+pub fn dequeue_shared_queue(Int32) -> Bytes? raise HostError
+
+pub fn deserialize_map(Bytes) -> Array[(String, String)] raise HostError
+
+pub fn dispatch_http_call(String, Array[(String, String)], body? : Bytes, trailers? : Array[(String, String)], timeout_ms? : Int32, (HttpCallResponse?) -> Unit raise) -> Int32 raise HostError
+
+pub fn done() -> Unit raise HostError
+
+pub fn enqueue_shared_queue(Int32, Bytes) -> Unit raise HostError
+
+pub fn get_buffer(BufferType, start? : Int32, size? : Int32) -> Bytes raise HostError
+
+pub fn get_downstream_data() -> Bytes raise HostError
+
+pub fn get_header(MapType, String) -> String? raise HostError
+
+pub fn get_header_map(MapType) -> Array[(String, String)] raise HostError
+
+pub fn get_plugin_configuration() -> Bytes raise HostError
+
+pub fn get_property(Array[String]) -> Bytes? raise HostError
+
+pub fn get_property_string(Array[String]) -> String? raise HostError
+
+pub fn get_request_body() -> Bytes raise HostError
+
+pub fn get_request_header(String) -> String? raise HostError
+
+pub fn get_request_headers() -> Array[(String, String)] raise HostError
+
+pub fn get_request_trailers() -> Array[(String, String)] raise HostError
+
+pub fn get_response_body() -> Bytes raise HostError
+
+pub fn get_response_header(String) -> String? raise HostError
+
+pub fn get_response_headers() -> Array[(String, String)] raise HostError
+
+pub fn get_response_trailers() -> Array[(String, String)] raise HostError
+
+pub fn get_shared_data(String) -> (Bytes, Int32)? raise HostError
+
+pub fn get_upstream_data() -> Bytes raise HostError
+
+pub fn get_vm_configuration() -> Bytes raise HostError
+
+pub fn log(LogLevel, String) -> Unit
+
+pub fn log_critical(String) -> Unit
+
+pub fn log_debug(String) -> Unit
+
+pub fn log_error(String) -> Unit
+
+pub fn log_info(String) -> Unit
+
+pub fn log_level() -> LogLevel
+
+pub fn log_trace(String) -> Unit
+
+pub fn log_warn(String) -> Unit
+
+pub fn memory_allocate(Int32) -> Int32
+
+pub fn pending_callouts() -> Int32
+
+pub fn prepend_request_body(Bytes) -> Unit raise HostError
+
+pub fn prepend_response_body(Bytes) -> Unit raise HostError
+
+pub fn register_shared_queue(String) -> Int32 raise HostError
+
+pub fn remove_header(MapType, String) -> Unit raise HostError
+
+pub fn remove_request_header(String) -> Unit raise HostError
+
+pub fn remove_response_header(String) -> Unit raise HostError
+
+pub fn replace_downstream_data(Bytes) -> Unit raise HostError
+
+pub fn replace_header(MapType, String, String) -> Unit raise HostError
+
+pub fn replace_request_body(Bytes) -> Unit raise HostError
+
+pub fn replace_request_header(String, String) -> Unit raise HostError
+
+pub fn replace_request_trailer(String, String) -> Unit raise HostError
+
+pub fn replace_response_body(Bytes) -> Unit raise HostError
+
+pub fn replace_response_header(String, String) -> Unit raise HostError
+
+pub fn replace_response_trailer(String, String) -> Unit raise HostError
+
+pub fn replace_upstream_data(Bytes) -> Unit raise HostError
+
+pub fn reset_contexts() -> Unit
+
+pub fn reset_http_stream() -> Unit raise HostError
+
+pub fn resolve_shared_queue(String, String) -> Int32 raise HostError
+
+pub fn resume_downstream() -> Unit raise HostError
+
+pub fn resume_http_request() -> Unit raise HostError
+
+pub fn resume_http_response() -> Unit raise HostError
+
+pub fn resume_upstream() -> Unit raise HostError
+
+pub fn send_http_response(Int32, Array[(String, String)], Bytes, details? : String, grpc_status? : Int32) -> Unit raise HostError
+
+pub fn serialize_map(Array[(String, String)]) -> Bytes
+
+pub fn serialize_path(Array[String]) -> Bytes
+
+pub fn set_buffer(BufferType, Int32, Int32, Bytes) -> Unit raise HostError
+
+pub fn set_header_map(MapType, Array[(String, String)]) -> Unit raise HostError
+
+pub fn set_host(&Host) -> Unit
+
+pub fn set_property(Array[String], Bytes) -> Unit raise HostError
+
+pub fn set_request_headers(Array[(String, String)]) -> Unit raise HostError
+
+pub fn set_request_trailers(Array[(String, String)]) -> Unit raise HostError
+
+pub fn set_response_headers(Array[(String, String)]) -> Unit raise HostError
+
+pub fn set_response_trailers(Array[(String, String)]) -> Unit raise HostError
+
+pub fn set_root_context((Int32) -> &RootContext) -> Unit
+
+pub fn set_shared_data(String, Bytes, cas? : Int32) -> Unit raise HostError
+
+pub fn set_tick_period_ms(Int32) -> Unit raise HostError
+
+// Errors
+#derive(@debug.Debug)
+pub suberror HostError {
+  HostError(String, Status)
+}
+pub fn HostError::output(Self, &Logger) -> Unit
+pub fn HostError::to_repr(Self) -> @debug.Repr
+pub fn HostError::to_string(Self) -> String
+pub impl Show for HostError
+
+// Types and methods
+#derive(Eq, @debug.Debug)
+pub(all) enum Action {
+  Continue
+  Pause
+}
+pub fn Action::equal(Self, Self) -> Bool
+pub fn Action::not_equal(Self, Self) -> Bool
+pub fn Action::output(Self, &Logger) -> Unit
+pub fn Action::to_int(Self) -> Int32
+pub fn Action::to_repr(Self) -> @debug.Repr
+pub fn Action::to_string(Self) -> String
+pub impl Show for Action
+
+#derive(Eq, Hash, @debug.Debug)
+pub(all) enum BufferType {
+  HttpRequestBody
+  HttpResponseBody
+  DownstreamData
+  UpstreamData
+  HttpCallResponseBody
+  GrpcReceiveBuffer
+  VmConfiguration
+  PluginConfiguration
+}
+pub fn BufferType::equal(Self, Self) -> Bool
+pub fn BufferType::hash(Self) -> Int32
+pub fn BufferType::hash_combine(Self, Hasher) -> Unit
+pub fn BufferType::not_equal(Self, Self) -> Bool
+pub fn BufferType::to_int(Self) -> Int32
+pub fn BufferType::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) enum ErrorPolicy {
+  FailOpen
+  FailClosed
+}
+pub fn ErrorPolicy::equal(Self, Self) -> Bool
+pub fn ErrorPolicy::not_equal(Self, Self) -> Bool
+pub fn ErrorPolicy::to_repr(Self) -> @debug.Repr
+
+pub(all) struct HttpCallResponse {
+  status_code : Int32
+  headers : Array[(String, String)]
+  body : Bytes
+  trailers : Array[(String, String)]
+}
+pub fn HttpCallResponse::header(Self, String) -> String?
+
+#derive(Compare, Eq, @debug.Debug)
+pub(all) enum LogLevel {
+  Trace
+  Debug
+  Info
+  Warn
+  Error
+  Critical
+}
+pub fn LogLevel::compare(Self, Self) -> Int32
+pub fn LogLevel::equal(Self, Self) -> Bool
+pub fn LogLevel::from_int(Int32) -> Self
+pub fn LogLevel::not_equal(Self, Self) -> Bool
+pub fn LogLevel::op_ge(Self, Self) -> Bool
+pub fn LogLevel::op_gt(Self, Self) -> Bool
+pub fn LogLevel::op_le(Self, Self) -> Bool
+pub fn LogLevel::op_lt(Self, Self) -> Bool
+pub fn LogLevel::output(Self, &Logger) -> Unit
+pub fn LogLevel::to_int(Self) -> Int32
+pub fn LogLevel::to_repr(Self) -> @debug.Repr
+pub fn LogLevel::to_string(Self) -> String
+pub impl Show for LogLevel
+
+#derive(Eq, Hash, @debug.Debug)
+pub(all) enum MapType {
+  HttpRequestHeaders
+  HttpRequestTrailers
+  HttpResponseHeaders
+  HttpResponseTrailers
+  GrpcReceiveInitialMetadata
+  GrpcReceiveTrailingMetadata
+  HttpCallResponseHeaders
+  HttpCallResponseTrailers
+}
+pub fn MapType::equal(Self, Self) -> Bool
+pub fn MapType::hash(Self) -> Int32
+pub fn MapType::hash_combine(Self, Hasher) -> Unit
+pub fn MapType::not_equal(Self, Self) -> Bool
+pub fn MapType::to_int(Self) -> Int32
+pub fn MapType::to_repr(Self) -> @debug.Repr
+
+pub struct Metric {
+  id : Int32
+  kind : MetricType
+}
+pub fn Metric::counter(String) -> Self raise HostError
+pub fn Metric::gauge(String) -> Self raise HostError
+pub fn Metric::histogram(String) -> Self raise HostError
+pub fn Metric::increment(Self, delta? : Int64) -> Unit raise HostError
+pub fn Metric::kind(Self) -> MetricType
+pub fn Metric::new(MetricType, String) -> Self raise HostError
+pub fn Metric::record(Self, UInt64) -> Unit raise HostError
+pub fn Metric::value(Self) -> UInt64 raise HostError
+
+#derive(Eq, @debug.Debug)
+pub(all) enum MetricType {
+  Counter
+  Gauge
+  Histogram
+}
+pub fn MetricType::equal(Self, Self) -> Bool
+pub fn MetricType::not_equal(Self, Self) -> Bool
+pub fn MetricType::to_int(Self) -> Int32
+pub fn MetricType::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) enum PeerType {
+  Unknown
+  Local
+  Remote
+}
+pub fn PeerType::equal(Self, Self) -> Bool
+pub fn PeerType::from_int(Int32) -> Self
+pub fn PeerType::not_equal(Self, Self) -> Bool
+pub fn PeerType::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub(all) enum Status {
+  Ok
+  NotFound
+  BadArgument
+  SerializationFailure
+  ParseFailure
+  InvalidMemoryAccess
+  Empty
+  CasMismatch
+  InternalFailure
+  Unimplemented
+  Other(Int32)
+}
+pub fn Status::equal(Self, Self) -> Bool
+pub fn Status::from_int(Int32) -> Self
+pub fn Status::not_equal(Self, Self) -> Bool
+pub fn Status::output(Self, &Logger) -> Unit
+pub fn Status::to_int(Self) -> Int32
+pub fn Status::to_repr(Self) -> @debug.Repr
+pub fn Status::to_string(Self) -> String
+pub impl Show for Status
+
+#derive(Eq, @debug.Debug)
+pub(all) enum StreamType {
+  Request
+  Response
+  Downstream
+  Upstream
+}
+pub fn StreamType::equal(Self, Self) -> Bool
+pub fn StreamType::not_equal(Self, Self) -> Bool
+pub fn StreamType::to_int(Self) -> Int32
+pub fn StreamType::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits
+pub(open) trait Host {
+  fn log(Self, LogLevel, String) -> Status
+  fn get_log_level(Self) -> LogLevel
+  fn get_current_time_nanos(Self) -> Int64
+  fn set_tick_period_ms(Self, Int32) -> Status
+  fn get_buffer(Self, BufferType, Int32, Int32) -> (Status, Bytes)
+  fn set_buffer(Self, BufferType, Int32, Int32, Bytes) -> Status
+  fn get_map_pairs(Self, MapType) -> (Status, Bytes)
+  fn set_map_pairs(Self, MapType, Bytes) -> Status
+  fn get_map_value(Self, MapType, String) -> (Status, Bytes)
+  fn replace_map_value(Self, MapType, String, String) -> Status
+  fn add_map_value(Self, MapType, String, String) -> Status
+  fn remove_map_value(Self, MapType, String) -> Status
+  fn get_property(Self, Bytes) -> (Status, Bytes)
+  fn set_property(Self, Bytes, Bytes) -> Status
+  fn get_shared_data(Self, String) -> (Status, Bytes, Int32)
+  fn set_shared_data(Self, String, Bytes, Int32) -> Status
+  fn register_shared_queue(Self, String) -> (Status, Int32)
+  fn resolve_shared_queue(Self, String, String) -> (Status, Int32)
+  fn enqueue_shared_queue(Self, Int32, Bytes) -> Status
+  fn dequeue_shared_queue(Self, Int32) -> (Status, Bytes)
+  fn continue_stream(Self, StreamType) -> Status
+  fn close_stream(Self, StreamType) -> Status
+  fn send_local_response(Self, Int32, String, Bytes, Bytes, Int32) -> Status
+  fn http_call(Self, String, Bytes, Bytes, Bytes, Int32) -> (Status, Int32)
+  fn set_effective_context(Self, Int32) -> Status
+  fn done(Self) -> Status
+  fn define_metric(Self, MetricType, String) -> (Status, Int32)
+  fn increment_metric(Self, Int32, Int64) -> Status
+  fn record_metric(Self, Int32, UInt64) -> Status
+  fn get_metric(Self, Int32) -> (Status, UInt64)
+}
+
+pub(open) trait HttpContext {
+  fn on_request_headers(Self, Int32, Bool) -> Action raise = _
+  fn on_request_body(Self, Int32, Bool) -> Action raise = _
+  fn on_request_trailers(Self, Int32) -> Action raise = _
+  fn on_response_headers(Self, Int32, Bool) -> Action raise = _
+  fn on_response_body(Self, Int32, Bool) -> Action raise = _
+  fn on_response_trailers(Self, Int32) -> Action raise = _
+  fn on_log(Self) -> Unit raise = _
+  fn on_done(Self) -> Unit raise = _
+}
+
+pub(open) trait RootContext {
+  fn on_vm_start(Self, Int32) -> Bool raise = _
+  fn on_plugin_start(Self, Int32) -> Bool raise = _
+  fn on_tick(Self) -> Unit raise = _
+  fn on_queue_ready(Self, Int32) -> Unit raise = _
+  fn on_plugin_done(Self) -> Bool raise = _
+  fn new_http_context(Self, Int32) -> &HttpContext? = _
+  fn new_tcp_context(Self, Int32) -> &TcpContext? = _
+  fn error_policy(Self) -> ErrorPolicy = _
+}
+
+pub(open) trait TcpContext {
+  fn on_new_connection(Self) -> Action raise = _
+  fn on_downstream_data(Self, Int32, Bool) -> Action raise = _
+  fn on_downstream_close(Self, PeerType) -> Unit raise = _
+  fn on_upstream_data(Self, Int32, Bool) -> Action raise = _
+  fn on_upstream_close(Self, PeerType) -> Unit raise = _
+  fn on_log(Self) -> Unit raise = _
+  fn on_done(Self) -> Unit raise = _
+}

@@ -4,17 +4,18 @@ let config : String =
   #| "timeout_ms":300,"forward":["Authorization"],"copy_back":["x-user-id"]}
 
 ///|
-fn setup(cfg? : String = config) -> @proxytest.HostEmulator {
-  let emu = @proxytest.HostEmulator::new(
-    plugin_config=@utf8.encode(cfg),
-    clusters=["authz"],
-  )
-  assert_true(emu.start()) catch { _ => abort("start") }
+fn setup(cfg~ : String = config) -> @proxytest.HostEmulator {
+  let emu = @proxytest.HostEmulator::new(plugin_config=@utf8.encode(cfg), clusters=[
+    "authz",
+  ])
+  assert_true(emu.start()) catch {
+    _ => abort("start")
+  }
   emu
 }
 
 ///|
-fn request(emu : @proxytest.HostEmulator) -> Int raise {
+fn request(emu : @proxytest.HostEmulator) -> Int32 raise {
   let id = emu.init_http()
   let a = emu.call_on_request_headers(id, [
     (":method", "POST"),
@@ -124,14 +125,25 @@ test "the request body waits for the verdict" {
   let a = emu.call_on_request_body(id, b"{\"amount\":100}")
   inspect(a, content="Pause")
   inspect(emu.forwarded_request_body(id).length(), content="0")
-  emu.call_on_http_call_response(emu.http_calls()[0].token, [(":status", "403")], b"")
+  emu.call_on_http_call_response(
+    emu.http_calls()[0].token,
+    [(":status", "403")],
+    b"",
+  )
   // Denied: the body never reaches the upstream.
   inspect(emu.forwarded_request_body(id).length(), content="0")
   let emu2 = setup()
   let id2 = request(emu2)
   let _ = emu2.call_on_request_body(id2, b"{\"amount\":100}")
-  emu2.call_on_http_call_response(emu2.http_calls()[0].token, [(":status", "200")], b"")
-  inspect(@utf8.decode_lossy(emu2.forwarded_request_body(id2)), content="{\"amount\":100}")
+  emu2.call_on_http_call_response(
+    emu2.http_calls()[0].token,
+    [(":status", "200")],
+    b"",
+  )
+  inspect(
+    @utf8.decode_lossy(emu2.forwarded_request_body(id2)),
+    content="{\"amount\":100}",
+  )
 }
 
 ///|

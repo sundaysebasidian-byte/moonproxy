@@ -1,9 +1,9 @@
 import {
-  "sundaysebasidian-byte/moonproxy" @moonproxy,
+  "sundaysebasidian-byte/moonproxy",
 }
 
 import {
-  "sundaysebasidian-byte/moonproxy/proxytest" @proxytest,
+  "sundaysebasidian-byte/moonproxy/proxytest",
   "moonbitlang/core/encoding/utf8",
 } for "test"
 

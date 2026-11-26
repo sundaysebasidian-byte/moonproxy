@@ -28,7 +28,7 @@ priv struct AuthzConfig {
   cluster : String
   authority : String
   path : String
-  timeout_ms : Int
+  timeout_ms : Int32
   forward : Array[String]
   copy_back : Array[String]
   fail_open : Bool
@@ -38,7 +38,13 @@ priv struct AuthzConfig {
 fn strings(v : Json?) -> Array[String] {
   match v {
     Some(Array(items)) =>
-      items.filter_map(fn(j) { if j is String(s) { Some(s.to_lower()) } else { None } })
+      items.filter_map(fn(j) {
+        if j is String(s) {
+          Some(s.to_lower())
+        } else {
+          None
+        }
+      })
     _ => []
   }
 }
@@ -75,7 +81,7 @@ priv struct AuthzRoot {
 }
 
 ///|
-impl @moonproxy.RootContext for AuthzRoot with on_plugin_start(self, _) {
+impl @moonproxy.RootContext for AuthzRoot with fn on_plugin_start(self, _) {
   let text = @utf8.decode_lossy(@moonproxy.get_plugin_configuration())
   guard parse_config(text) is Some(c) else {
     @moonproxy.log_error("ext_authz: configuration needs a \"cluster\" string")
@@ -89,14 +95,14 @@ impl @moonproxy.RootContext for AuthzRoot with on_plugin_start(self, _) {
 }
 
 ///|
-impl @moonproxy.RootContext for AuthzRoot with new_http_context(self, _) {
-  Some(AuthzStream::{ root: self, pending: false })
+impl @moonproxy.RootContext for AuthzRoot with fn new_http_context(self, _) {
+  Some(AuthzStream::{ root: self, pending: false, })
 }
 
 ///|
 /// An authorization plugin must never let a request through because of a
 /// bug in the plugin itself.
-impl @moonproxy.RootContext for AuthzRoot with error_policy(_) {
+impl @moonproxy.RootContext for AuthzRoot with fn error_policy(_) {
   FailClosed
 }
 
@@ -118,7 +124,11 @@ fn bump(m : @moonproxy.Metric?) -> Unit raise {
 }
 
 ///|
-impl @moonproxy.HttpContext for AuthzStream with on_request_headers(self, _, _) {
+impl @moonproxy.HttpContext for AuthzStream with fn on_request_headers(
+  self,
+  _,
+  _,
+) {
   // A running plugin always has a configuration (on_plugin_start rejects a
   // bad one); if not, the error policy (FailClosed) rejects the request.
   guard self.root.config is Some(cfg) else { fail("ext_authz: not configured") }
@@ -131,7 +141,10 @@ impl @moonproxy.HttpContext for AuthzStream with on_request_headers(self, _, _) 
     (":method", "GET"),
     (":path", cfg.path),
     (":authority", cfg.authority),
-    ("x-original-method", @moonproxy.get_request_header(":method").unwrap_or("")),
+    (
+      "x-original-method",
+      @moonproxy.get_request_header(":method").unwrap_or(""),
+    ),
     ("x-original-uri", @moonproxy.get_request_header(":path").unwrap_or("")),
   ]
   let all = @moonproxy.get_request_headers()
@@ -168,7 +181,7 @@ impl @moonproxy.HttpContext for AuthzStream with on_request_headers(self, _, _) 
 }
 
 ///|
-impl @moonproxy.HttpContext for AuthzStream with on_request_body(self, _, _) {
+impl @moonproxy.HttpContext for AuthzStream with fn on_request_body(self, _, _) {
   if self.pending {
     Pause
   } else {
@@ -177,7 +190,7 @@ impl @moonproxy.HttpContext for AuthzStream with on_request_body(self, _, _) {
 }
 
 ///|
-impl @moonproxy.HttpContext for AuthzStream with on_request_trailers(self, _) {
+impl @moonproxy.HttpContext for AuthzStream with fn on_request_trailers(self, _) {
   if self.pending {
     Pause
   } else {
@@ -238,6 +251,6 @@ fn on_verdict(
 ///|
 fn init {
   @moonproxy.set_root_context(fn(_) {
-    AuthzRoot::{ config: None, allowed: None, denied: None, failed: None }
+    AuthzRoot::{ config: None, allowed: None, denied: None, failed: None, }
   })
 }

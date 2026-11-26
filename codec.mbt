@@ -6,7 +6,7 @@
 /// All integers are little-endian.
 
 ///|
-fn write_u32_le(buf : FixedArray[Byte], at : Int, v : Int) -> Unit {
+fn write_u32_le(buf : FixedArray[Byte], at : Int32, v : Int32) -> Unit {
   buf[at] = (v & 0xff).to_byte()
   buf[at + 1] = ((v >> 8) & 0xff).to_byte()
   buf[at + 2] = ((v >> 16) & 0xff).to_byte()
@@ -14,7 +14,7 @@ fn write_u32_le(buf : FixedArray[Byte], at : Int, v : Int) -> Unit {
 }
 
 ///|
-fn read_u32_le(buf : Bytes, at : Int) -> Int {
+fn read_u32_le(buf : Bytes, at : Int32) -> Int32 {
   buf[at].to_int() |
   (buf[at + 1].to_int() << 8) |
   (buf[at + 2].to_int() << 16) |
@@ -47,7 +47,9 @@ pub fn serialize_map(pairs : Array[(String, String)]) -> Bytes {
 ///|
 /// Parse the proxy-wasm map wire format. Malformed input raises
 /// `HostError(_, ParseFailure)` instead of reading out of bounds.
-pub fn deserialize_map(bytes : Bytes) -> Array[(String, String)] raise HostError {
+pub fn deserialize_map(
+  bytes : Bytes,
+) -> Array[(String, String)] raise HostError {
   let out = []
   if bytes.length() == 0 {
     return out

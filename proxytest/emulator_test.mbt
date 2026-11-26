@@ -4,27 +4,27 @@
 
 ///|
 struct Root {
-  on_http : (Int) -> &@moonproxy.HttpContext
+  on_http : (Int32) -> &@moonproxy.HttpContext
   policy : @moonproxy.ErrorPolicy
 }
 
 ///|
-impl @moonproxy.RootContext for Root with new_http_context(self, id) {
+impl @moonproxy.RootContext for Root with fn new_http_context(self, id) {
   Some((self.on_http)(id))
 }
 
 ///|
-impl @moonproxy.RootContext for Root with error_policy(self) {
+impl @moonproxy.RootContext for Root with fn error_policy(self) {
   self.policy
 }
 
 ///|
 fn install(
-  on_http : (Int) -> &@moonproxy.HttpContext,
-  policy? : @moonproxy.ErrorPolicy = FailOpen,
-  clusters? : Array[String] = [],
+  on_http : (Int32) -> &@moonproxy.HttpContext,
+  policy~ : @moonproxy.ErrorPolicy = FailOpen,
+  clusters~ : Array[String] = [],
 ) -> @proxytest.HostEmulator {
-  @moonproxy.set_root_context(fn(_) { Root::{ on_http, policy } })
+  @moonproxy.set_root_context(fn(_) { Root::{ on_http, policy, } })
   let emu = @proxytest.HostEmulator::new(clusters~)
   guard emu.start() else { abort("plugin failed to start") }
   emu
@@ -34,7 +34,7 @@ fn install(
 /// A filter defined by closures, to keep each test self-contained.
 struct Fn {
   req_headers : () -> @moonproxy.Action raise
-  req_body : (Int, Bool) -> @moonproxy.Action raise
+  req_body : (Int32, Bool) -> @moonproxy.Action raise
   resp_headers : () -> @moonproxy.Action raise
   done : () -> Unit raise
   log : () -> Unit raise
@@ -42,37 +42,37 @@ struct Fn {
 
 ///|
 fn Fn::new(
-  req_headers? : () -> @moonproxy.Action raise = () => Continue,
-  req_body? : (Int, Bool) -> @moonproxy.Action raise = (_, _) => Continue,
-  resp_headers? : () -> @moonproxy.Action raise = () => Continue,
-  done? : () -> Unit raise = () => (),
-  log? : () -> Unit raise = () => (),
+  req_headers~ : () -> @moonproxy.Action raise = () => Continue,
+  req_body~ : (Int32, Bool) -> @moonproxy.Action raise = (_, _) => Continue,
+  resp_headers~ : () -> @moonproxy.Action raise = () => Continue,
+  done~ : () -> Unit raise = () => (),
+  log~ : () -> Unit raise = () => (),
 ) -> Fn {
-  { req_headers, req_body, resp_headers, done, log }
+  { req_headers, req_body, resp_headers, done, log, }
 }
 
 ///|
-impl @moonproxy.HttpContext for Fn with on_response_headers(self, _, _) {
+impl @moonproxy.HttpContext for Fn with fn on_response_headers(self, _, _) {
   (self.resp_headers)()
 }
 
 ///|
-impl @moonproxy.HttpContext for Fn with on_done(self) {
+impl @moonproxy.HttpContext for Fn with fn on_done(self) {
   (self.done)()
 }
 
 ///|
-impl @moonproxy.HttpContext for Fn with on_request_headers(self, _, _) {
+impl @moonproxy.HttpContext for Fn with fn on_request_headers(self, _, _) {
   (self.req_headers)()
 }
 
 ///|
-impl @moonproxy.HttpContext for Fn with on_request_body(self, n, eos) {
+impl @moonproxy.HttpContext for Fn with fn on_request_body(self, n, eos) {
   (self.req_body)(n, eos)
 }
 
 ///|
-impl @moonproxy.HttpContext for Fn with on_log(self) {
+impl @moonproxy.HttpContext for Fn with fn on_log(self) {
   (self.log)()
 }
 
@@ -166,14 +166,22 @@ test "paused body accumulates chunks until the plugin continues" {
         return Pause
       }
       let body = @moonproxy.get_request_body()
-      @moonproxy.replace_request_body(@utf8.encode(@utf8.decode_lossy(body).to_upper()))
+      @moonproxy.replace_request_body(
+        @utf8.encode(@utf8.decode_lossy(body).to_upper()),
+      )
       Continue
     })
   })
   let id = emu.init_http()
   let _ = emu.call_on_request_headers(id, [(":path", "/")])
-  inspect(emu.call_on_request_body(id, b"ab", end_of_stream=false), content="Pause")
-  inspect(emu.call_on_request_body(id, b"cd", end_of_stream=false), content="Pause")
+  inspect(
+    emu.call_on_request_body(id, b"ab", end_of_stream=false),
+    content="Pause",
+  )
+  inspect(
+    emu.call_on_request_body(id, b"cd", end_of_stream=false),
+    content="Pause",
+  )
   inspect(emu.call_on_request_body(id, b"ef"), content="Continue")
   debug_inspect(sizes, content="[2, 4, 6]")
   inspect(emu.request_body(id), content="b\"ABCDEF\"")
@@ -304,7 +312,9 @@ test "shared data CAS" {
   let _ = @proxytest.HostEmulator::new()
   inspect(@moonproxy.get_shared_data("k") is None, content="true")
   @moonproxy.set_shared_data("k", b"1")
-  guard @moonproxy.get_shared_data("k") is Some((v, cas)) else { fail("missing") }
+  guard @moonproxy.get_shared_data("k") is Some((v, cas)) else {
+    fail("missing")
+  }
   inspect(v, content="b\"1\"")
   @moonproxy.set_shared_data("k", b"2", cas~)
   // The old version is now stale.
@@ -313,7 +323,9 @@ test "shared data CAS" {
   } noraise {
     _ => fail("stale CAS must fail")
   }
-  guard @moonproxy.get_shared_data("k") is Some((v2, _)) else { fail("missing") }
+  guard @moonproxy.get_shared_data("k") is Some((v2, _)) else {
+    fail("missing")
+  }
   inspect(v2, content="b\"2\"")
 }
 
@@ -359,7 +371,7 @@ struct CfgRoot {
 }
 
 ///|
-impl @moonproxy.RootContext for CfgRoot with on_plugin_start(self, size) {
+impl @moonproxy.RootContext for CfgRoot with fn on_plugin_start(self, size) {
   let cfg = @moonproxy.get_plugin_configuration() catch { _ => return false }
   self.seen.val = "\{size}:\{@utf8.decode_lossy(cfg)}"
   cfg != b"reject"
@@ -369,9 +381,15 @@ impl @moonproxy.RootContext for CfgRoot with on_plugin_start(self, size) {
 test "configuration is visible to on_plugin_start" {
   let seen = Ref("")
   @moonproxy.set_root_context(fn(_) { CfgRoot::{ seen, } })
-  inspect(@proxytest.HostEmulator::new(plugin_config=b"{\"a\":1}").start(), content="true")
+  inspect(
+    @proxytest.HostEmulator::new(plugin_config=b"{\"a\":1}").start(),
+    content="true",
+  )
   inspect(seen.val, content="7:{\"a\":1}")
-  inspect(@proxytest.HostEmulator::new(plugin_config=b"reject").start(), content="false")
+  inspect(
+    @proxytest.HostEmulator::new(plugin_config=b"reject").start(),
+    content="false",
+  )
 }
 
 ///|
@@ -398,8 +416,14 @@ test "Pause on headers holds body and trailers until the plugin resumes" {
   let id = emu.init_http()
   inspect(emu.call_on_request_headers(id, []), content="Pause")
   // Envoy's StopAllIterationAndWatermark: the plugin does not see these yet.
-  inspect(emu.call_on_request_body(id, b"abc", end_of_stream=false), content="Pause")
-  inspect(emu.call_on_request_body(id, b"de", end_of_stream=false), content="Pause")
+  inspect(
+    emu.call_on_request_body(id, b"abc", end_of_stream=false),
+    content="Pause",
+  )
+  inspect(
+    emu.call_on_request_body(id, b"de", end_of_stream=false),
+    content="Pause",
+  )
   inspect(emu.call_on_request_trailers(id, [("t", "1")]), content="Pause")
   inspect(seen.length(), content="0")
   inspect(emu.forwarded_request_body(id).length(), content="0")
@@ -413,9 +437,7 @@ test "Pause on headers holds body and trailers until the plugin resumes" {
 
 ///|
 test "FailOpen logs the error and lets the request through" {
-  let emu = install(fn(_) {
-    Fn::new(req_headers=fn() raise { fail("boom") })
-  })
+  let emu = install(fn(_) { Fn::new(req_headers=fn() raise { fail("boom") }) })
   let id = emu.init_http()
   inspect(emu.call_on_request_headers(id, []), content="Continue")
   inspect(emu.local_response(id) is None, content="true")
@@ -424,7 +446,10 @@ test "FailOpen logs the error and lets the request through" {
 
 ///|
 test "FailClosed rejects the request when a header callback raises" {
-  let emu = install(fn(_) { Fn::new(req_headers=fn() raise { fail("boom") }) }, policy=FailClosed)
+  let emu = install(
+    fn(_) { Fn::new(req_headers=fn() raise { fail("boom") }) },
+    policy=FailClosed,
+  )
   let id = emu.init_http()
   inspect(emu.call_on_request_headers(id, []), content="Pause")
   guard emu.local_response(id) is Some(r) else { fail("expected a 500") }
@@ -441,7 +466,10 @@ test "FailClosed rejects the request when a body callback raises" {
   let id = emu.init_http()
   let _ = emu.call_on_request_headers(id, [])
   inspect(emu.call_on_request_body(id, b"x"), content="Pause")
-  debug_inspect(emu.local_response(id).map(fn(r) { r.status_code }), content="Some(500)")
+  debug_inspect(
+    emu.local_response(id).map(fn(r) { r.status_code }),
+    content="Some(500)",
+  )
   inspect(emu.forwarded_request_body(id).length(), content="0")
 }
 
@@ -462,13 +490,24 @@ test "a raising callout callback never leaves the stream hanging" {
   let closed = install(fn(_) { failing_callout() }, policy=FailClosed)
   let id = closed.init_http()
   let _ = closed.call_on_request_headers(id, [])
-  closed.call_on_http_call_response(closed.http_calls()[0].token, [(":status", "200")], b"")
-  debug_inspect(closed.local_response(id).map(fn(r) { r.status_code }), content="Some(500)")
+  closed.call_on_http_call_response(
+    closed.http_calls()[0].token,
+    [(":status", "200")],
+    b"",
+  )
+  debug_inspect(
+    closed.local_response(id).map(fn(r) { r.status_code }),
+    content="Some(500)",
+  )
   inspect(closed.request_resumes(id), content="0")
   let open = install(fn(_) { failing_callout() }, policy=FailOpen)
   let id2 = open.init_http()
   let _ = open.call_on_request_headers(id2, [])
-  open.call_on_http_call_response(open.http_calls()[0].token, [(":status", "200")], b"")
+  open.call_on_http_call_response(
+    open.http_calls()[0].token,
+    [(":status", "200")],
+    b"",
+  )
   inspect(open.request_resumes(id2), content="1")
   inspect(open.local_response(id2) is None, content="true")
 }
@@ -508,7 +547,11 @@ test "a local response runs through the plugin's own response callbacks" {
   let emu = install(fn(_) {
     Fn::new(
       req_headers=fn() raise {
-        @moonproxy.send_http_response(403, [("content-type", "text/plain")], b"denied")
+        @moonproxy.send_http_response(
+          403,
+          [("content-type", "text/plain")],
+          b"denied",
+        )
         Pause
       },
       resp_headers=fn() raise {
@@ -580,29 +623,29 @@ struct Tcp {
 }
 
 ///|
-impl @moonproxy.TcpContext for Tcp with on_new_connection(self) {
+impl @moonproxy.TcpContext for Tcp with fn on_new_connection(self) {
   self.kinds.push("tcp")
   Continue
 }
 
 ///|
-impl @moonproxy.TcpContext for Tcp with on_downstream_data(_, _, _) {
+impl @moonproxy.TcpContext for Tcp with fn on_downstream_data(_, _, _) {
   fail("tcp bug")
 }
 
 ///|
-impl @moonproxy.RootContext for BothRoot with new_http_context(self, _) {
+impl @moonproxy.RootContext for BothRoot with fn new_http_context(self, _) {
   self.kinds.push("http")
   Some(Fn::new())
 }
 
 ///|
-impl @moonproxy.RootContext for BothRoot with new_tcp_context(self, _) {
-  Some(Tcp::{ kinds: self.kinds })
+impl @moonproxy.RootContext for BothRoot with fn new_tcp_context(self, _) {
+  Some(Tcp::{ kinds: self.kinds, })
 }
 
 ///|
-impl @moonproxy.RootContext for BothRoot with error_policy(_) {
+impl @moonproxy.RootContext for BothRoot with fn error_policy(_) {
   FailClosed
 }
 
@@ -644,8 +687,15 @@ test "a callout from the response phase fails in the response direction" {
   let open = install(fn(_) { raising_response_callout() }, clusters=["svc"])
   let id = open.init_http()
   let _ = open.call_on_request_headers(id, [])
-  inspect(open.call_on_response_headers(id, [(":status", "200")]), content="Pause")
-  open.call_on_http_call_response(open.http_calls()[0].token, [(":status", "200")], b"")
+  inspect(
+    open.call_on_response_headers(id, [(":status", "200")]),
+    content="Pause",
+  )
+  open.call_on_http_call_response(
+    open.http_calls()[0].token,
+    [(":status", "200")],
+    b"",
+  )
   inspect(open.response_resumes(id), content="1")
   inspect(open.request_resumes(id), content="0")
   let closed = install(
@@ -656,7 +706,11 @@ test "a callout from the response phase fails in the response direction" {
   let id = closed.init_http()
   let _ = closed.call_on_request_headers(id, [])
   let _ = closed.call_on_response_headers(id, [(":status", "200")])
-  closed.call_on_http_call_response(closed.http_calls()[0].token, [(":status", "200")], b"")
+  closed.call_on_http_call_response(
+    closed.http_calls()[0].token,
+    [(":status", "200")],
+    b"",
+  )
   // Response headers may already be on their way: reset, no local 500.
   inspect(closed.was_reset(id), content="true")
   inspect(closed.local_response(id) is None, content="true")
@@ -670,7 +724,10 @@ test "FailClosed in a response callback resets the stream" {
   )
   let id = emu.init_http()
   let _ = emu.call_on_request_headers(id, [])
-  inspect(emu.call_on_response_headers(id, [(":status", "200")]), content="Pause")
+  inspect(
+    emu.call_on_response_headers(id, [(":status", "200")]),
+    content="Pause",
+  )
   inspect(emu.was_reset(id), content="true")
   inspect(emu.local_response(id) is None, content="true")
 }
@@ -690,11 +747,11 @@ test "a root that declines a stream is asked only once" {
 
 ///|
 struct Declining {
-  asked : Ref[Int]
+  asked : Ref[Int32]
 }
 
 ///|
-impl @moonproxy.RootContext for Declining with new_http_context(self, _) {
+impl @moonproxy.RootContext for Declining with fn new_http_context(self, _) {
   self.asked.val += 1
   None
 }

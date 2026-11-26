@@ -58,24 +58,24 @@ fn HostEmulator::map_ref(
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with log(self, level, msg) {
+impl @moonproxy.Host for HostEmulator with fn log(self, level, msg) {
   self.logs.push((level, msg))
   Ok
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with get_log_level(self) {
+impl @moonproxy.Host for HostEmulator with fn get_log_level(self) {
   self.log_level
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with get_current_time_nanos(self) {
+impl @moonproxy.Host for HostEmulator with fn get_current_time_nanos(self) {
   self.now_nanos
 }
 
 ///|
 /// Envoy applies the period to the root context whichever context calls it.
-impl @moonproxy.Host for HostEmulator with set_tick_period_ms(self, ms) {
+impl @moonproxy.Host for HostEmulator with fn set_tick_period_ms(self, ms) {
   self.tick_ms = ms
   Ok
 }
@@ -109,7 +109,7 @@ fn HostEmulator::buffer_of(
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with get_buffer(self, kind, start, max) {
+impl @moonproxy.Host for HostEmulator with fn get_buffer(self, kind, start, max) {
   guard self.buffer_of(kind) is Some(b) else { return (NotFound, b"") }
   if start < 0 || max < 0 || start > b.length() {
     return (BadArgument, b"")
@@ -120,7 +120,13 @@ impl @moonproxy.Host for HostEmulator with get_buffer(self, kind, start, max) {
 
 ///|
 /// Envoy `Buffer::copyFrom`.
-impl @moonproxy.Host for HostEmulator with set_buffer(self, kind, start, size, data) {
+impl @moonproxy.Host for HostEmulator with fn set_buffer(
+  self,
+  kind,
+  start,
+  size,
+  data,
+) {
   match kind {
     HttpRequestBody | HttpResponseBody | DownstreamData | UpstreamData => ()
     _ => return BadArgument
@@ -140,7 +146,7 @@ impl @moonproxy.Host for HostEmulator with set_buffer(self, kind, start, size, d
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with get_map_pairs(self, kind) {
+impl @moonproxy.Host for HostEmulator with fn get_map_pairs(self, kind) {
   match self.map_ref(kind, false) {
     Some(m) => (Ok, @moonproxy.serialize_map(m))
     // Envoy serializes a missing map as an empty map.
@@ -149,7 +155,7 @@ impl @moonproxy.Host for HostEmulator with get_map_pairs(self, kind) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with set_map_pairs(self, kind, data) {
+impl @moonproxy.Host for HostEmulator with fn set_map_pairs(self, kind, data) {
   guard self.map_ref(kind, true) is Some(m) else { return BadArgument }
   let pairs = @moonproxy.deserialize_map(data) catch {
     _ => return ParseFailure
@@ -160,7 +166,7 @@ impl @moonproxy.Host for HostEmulator with set_map_pairs(self, kind, data) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with get_map_value(self, kind, key) {
+impl @moonproxy.Host for HostEmulator with fn get_map_value(self, kind, key) {
   guard self.map_ref(kind, false) is Some(m) else { return (BadArgument, b"") }
   let k = key.to_lower()
   for p in m {
@@ -172,7 +178,12 @@ impl @moonproxy.Host for HostEmulator with get_map_value(self, kind, key) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with replace_map_value(self, kind, key, value) {
+impl @moonproxy.Host for HostEmulator with fn replace_map_value(
+  self,
+  kind,
+  key,
+  value,
+) {
   guard self.map_ref(kind, true) is Some(m) else { return BadArgument }
   let k = key.to_lower()
   // Envoy setCopy: overwrite the first entry, drop the other duplicates.
@@ -193,14 +204,19 @@ impl @moonproxy.Host for HostEmulator with replace_map_value(self, kind, key, va
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with add_map_value(self, kind, key, value) {
+impl @moonproxy.Host for HostEmulator with fn add_map_value(
+  self,
+  kind,
+  key,
+  value,
+) {
   guard self.map_ref(kind, true) is Some(m) else { return BadArgument }
   m.push((key.to_lower(), value))
   Ok
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with remove_map_value(self, kind, key) {
+impl @moonproxy.Host for HostEmulator with fn remove_map_value(self, kind, key) {
   guard self.map_ref(kind, true) is Some(m) else { return BadArgument }
   let k = key.to_lower()
   m.retain(fn(p) { p.0 != k })
@@ -208,7 +224,7 @@ impl @moonproxy.Host for HostEmulator with remove_map_value(self, kind, key) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with get_property(self, path) {
+impl @moonproxy.Host for HostEmulator with fn get_property(self, path) {
   match self.properties.get(path_key(path)) {
     Some(v) => (Ok, v)
     None => (NotFound, b"")
@@ -216,14 +232,14 @@ impl @moonproxy.Host for HostEmulator with get_property(self, path) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with set_property(self, path, value) {
+impl @moonproxy.Host for HostEmulator with fn set_property(self, path, value) {
   self.properties[path_key(path)] = value
   Ok
 }
 
 ///|
 /// proxy-wasm-cpp-host `SharedData::get`.
-impl @moonproxy.Host for HostEmulator with get_shared_data(self, key) {
+impl @moonproxy.Host for HostEmulator with fn get_shared_data(self, key) {
   match self.shared.get(key) {
     Some((v, cas)) => (Ok, v, cas)
     None => (NotFound, b"", 0)
@@ -233,7 +249,12 @@ impl @moonproxy.Host for HostEmulator with get_shared_data(self, key) {
 ///|
 /// proxy-wasm-cpp-host `SharedData::set`: a non-zero `cas` must match the
 /// stored version; every successful write takes the next global version.
-impl @moonproxy.Host for HostEmulator with set_shared_data(self, key, value, cas) {
+impl @moonproxy.Host for HostEmulator with fn set_shared_data(
+  self,
+  key,
+  value,
+  cas,
+) {
   if cas != 0 && self.cas_failures > 0 {
     // Injected race: another worker rewrote the key, so its CAS moves on.
     self.cas_failures -= 1
@@ -252,7 +273,7 @@ impl @moonproxy.Host for HostEmulator with set_shared_data(self, key, value, cas
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with register_shared_queue(self, name) {
+impl @moonproxy.Host for HostEmulator with fn register_shared_queue(self, name) {
   match self.queue_ids.get(name) {
     Some(id) => (Ok, id)
     None => {
@@ -265,7 +286,11 @@ impl @moonproxy.Host for HostEmulator with register_shared_queue(self, name) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with resolve_shared_queue(self, _vm_id, name) {
+impl @moonproxy.Host for HostEmulator with fn resolve_shared_queue(
+  self,
+  _vm_id,
+  name,
+) {
   match self.queue_ids.get(name) {
     Some(id) => (Ok, id)
     None => (NotFound, 0)
@@ -273,7 +298,11 @@ impl @moonproxy.Host for HostEmulator with resolve_shared_queue(self, _vm_id, na
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with enqueue_shared_queue(self, id, data) {
+impl @moonproxy.Host for HostEmulator with fn enqueue_shared_queue(
+  self,
+  id,
+  data,
+) {
   guard self.queues.get(id) is Some(q) else { return NotFound }
   q.push(data)
   self.ready_queues.push(id)
@@ -281,7 +310,7 @@ impl @moonproxy.Host for HostEmulator with enqueue_shared_queue(self, id, data) 
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with dequeue_shared_queue(self, id) {
+impl @moonproxy.Host for HostEmulator with fn dequeue_shared_queue(self, id) {
   guard self.queues.get(id) is Some(q) else { return (NotFound, b"") }
   if q.is_empty() {
     return (Empty, b"")
@@ -290,7 +319,7 @@ impl @moonproxy.Host for HostEmulator with dequeue_shared_queue(self, id) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with continue_stream(self, kind) {
+impl @moonproxy.Host for HostEmulator with fn continue_stream(self, kind) {
   guard self.current() is Some(s) else { return BadArgument }
   match kind {
     Request => {
@@ -325,7 +354,7 @@ impl @moonproxy.Host for HostEmulator with continue_stream(self, kind) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with close_stream(self, kind) {
+impl @moonproxy.Host for HostEmulator with fn close_stream(self, kind) {
   guard self.current() is Some(s) else { return BadArgument }
   match kind {
     Downstream => s.closed_downstream = true
@@ -340,13 +369,13 @@ impl @moonproxy.Host for HostEmulator with close_stream(self, kind) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with send_local_response(
+impl @moonproxy.Host for HostEmulator with fn send_local_response(
   self,
   code,
   details,
   body,
   headers,
-  _grpc
+  _grpc,
 ) {
   guard self.current() is Some(s) && s.is_http else { return BadArgument }
   let pairs = @moonproxy.deserialize_map(headers) catch {
@@ -364,13 +393,13 @@ impl @moonproxy.Host for HostEmulator with send_local_response(
 
 ///|
 /// Envoy `Context::httpCall` argument checks.
-impl @moonproxy.Host for HostEmulator with http_call(
+impl @moonproxy.Host for HostEmulator with fn http_call(
   self,
   upstream,
   headers,
   body,
   trailers,
-  timeout
+  timeout,
 ) {
   if timeout < 0 || upstream == "" {
     return (BadArgument, 0)
@@ -405,7 +434,7 @@ impl @moonproxy.Host for HostEmulator with http_call(
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with set_effective_context(self, id) {
+impl @moonproxy.Host for HostEmulator with fn set_effective_context(self, id) {
   if id == self.root_id || self.streams.contains(id) {
     self.active = id
     Ok
@@ -415,18 +444,23 @@ impl @moonproxy.Host for HostEmulator with set_effective_context(self, id) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with done(self) {
+impl @moonproxy.Host for HostEmulator with fn done(self) {
   self.done_called = true
   Ok
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with define_metric(self, kind, name) {
+impl @moonproxy.Host for HostEmulator with fn define_metric(self, kind, name) {
   match self.metric_ids.get(name) {
-    Some(i) => if self.metrics[i].kind == kind { (Ok, i) } else { (BadArgument, 0) }
+    Some(i) =>
+      if self.metrics[i].kind == kind {
+        (Ok, i)
+      } else {
+        (BadArgument, 0)
+      }
     None => {
       let i = self.metrics.length()
-      self.metrics.push({ kind, value: 0L })
+      self.metrics.push({ kind, value: 0L, })
       self.metric_ids[name] = i
       (Ok, i)
     }
@@ -434,7 +468,7 @@ impl @moonproxy.Host for HostEmulator with define_metric(self, kind, name) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with increment_metric(self, id, delta) {
+impl @moonproxy.Host for HostEmulator with fn increment_metric(self, id, delta) {
   guard id >= 0 && id < self.metrics.length() else { return NotFound }
   let m = self.metrics[id]
   // Envoy `incrementMetric`: a counter needs `offset > 0`.
@@ -446,14 +480,14 @@ impl @moonproxy.Host for HostEmulator with increment_metric(self, id, delta) {
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with record_metric(self, id, value) {
+impl @moonproxy.Host for HostEmulator with fn record_metric(self, id, value) {
   guard id >= 0 && id < self.metrics.length() else { return NotFound }
   self.metrics[id].value = value.reinterpret_as_int64()
   Ok
 }
 
 ///|
-impl @moonproxy.Host for HostEmulator with get_metric(self, id) {
+impl @moonproxy.Host for HostEmulator with fn get_metric(self, id) {
   guard id >= 0 && id < self.metrics.length() else { return (NotFound, 0) }
   (Ok, self.metrics[id].value.reinterpret_as_uint64())
 }

@@ -13,7 +13,10 @@ test "marks requests that carry a key" {
   let emu = @proxytest.HostEmulator::new()
   assert_true(emu.start())
   let id = emu.init_http()
-  inspect(emu.call_on_request_headers(id, [("x-api-key", "k")]), content="Continue")
+  inspect(
+    emu.call_on_request_headers(id, [("x-api-key", "k")]),
+    content="Continue",
+  )
   debug_inspect(
     emu.request_headers(id),
     content=(

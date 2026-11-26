@@ -23,7 +23,7 @@ priv struct AuthRoot {
 }
 
 ///|
-impl @moonproxy.RootContext for AuthRoot with on_plugin_start(self, _) {
+impl @moonproxy.RootContext for AuthRoot with fn on_plugin_start(self, _) {
   let cfg = @json.parse(
     @utf8.decode_lossy(@moonproxy.get_plugin_configuration()),
   )
@@ -53,13 +53,13 @@ impl @moonproxy.RootContext for AuthRoot with on_plugin_start(self, _) {
 
 ///|
 /// A bug in the plugin must reject the request, not let it through.
-impl @moonproxy.RootContext for AuthRoot with error_policy(_) {
+impl @moonproxy.RootContext for AuthRoot with fn error_policy(_) {
   FailClosed
 }
 
 ///|
-impl @moonproxy.RootContext for AuthRoot with new_http_context(self, _) {
-  Some(AuthStream::{ root: self })
+impl @moonproxy.RootContext for AuthRoot with fn new_http_context(self, _) {
+  Some(AuthStream::{ root: self, })
 }
 
 ///|
@@ -75,7 +75,7 @@ fn bump(m : @moonproxy.Metric?) -> Unit raise {
 }
 
 ///|
-fn reject(code : Int, msg : String) -> Unit raise {
+fn reject(code : Int32, msg : String) -> Unit raise {
   @moonproxy.send_http_response(
     code,
     [("content-type", "application/json"), ("www-authenticate", "ApiKey")],
@@ -85,7 +85,11 @@ fn reject(code : Int, msg : String) -> Unit raise {
 }
 
 ///|
-impl @moonproxy.HttpContext for AuthStream with on_request_headers(self, _, _) {
+impl @moonproxy.HttpContext for AuthStream with fn on_request_headers(
+  self,
+  _,
+  _,
+) {
   let root = self.root
   guard @moonproxy.get_request_header(root.header) is Some(key) else {
     bump(root.denied)
@@ -106,6 +110,11 @@ impl @moonproxy.HttpContext for AuthStream with on_request_headers(self, _, _) {
 ///|
 fn init {
   @moonproxy.set_root_context(fn(_) {
-    AuthRoot::{ header: "x-api-key", keys: Map([]), allowed: None, denied: None }
+    AuthRoot::{
+      header: "x-api-key",
+      keys: Map([]),
+      allowed: None,
+      denied: None,
+    }
   })
 }

@@ -8,26 +8,26 @@
 /// `proxytest` emulator call them, plugin code never does.
 
 ///|
-let root_factory : Ref[((Int) -> &RootContext)?] = { val: None }
+let root_factory : Ref[((Int32) -> &RootContext)?] = { val: None, }
 
 ///|
-let roots : Map[Int, &RootContext] = Map([])
+let roots : Map[Int32, &RootContext] = Map([])
 
 ///|
 /// Child context id -> its root context id. A child exists here from
 /// `proxy_on_context_create`; its HTTP or TCP object is made on the first
 /// callback, because only then is it known which kind of filter runs it.
-let parents : Map[Int, Int] = Map([])
+let parents : Map[Int32, Int32] = Map([])
 
 ///|
-let http_contexts : Map[Int, &HttpContext] = Map([])
+let http_contexts : Map[Int32, &HttpContext] = Map([])
 
 ///|
-let tcp_contexts : Map[Int, &TcpContext] = Map([])
+let tcp_contexts : Map[Int32, &TcpContext] = Map([])
 
 ///|
 priv struct Callout {
-  owner : Int
+  owner : Int32
   /// Issued while the response was being processed (so a failure must
   /// resume or reset the response, not the request).
   response_phase : Bool
@@ -35,28 +35,28 @@ priv struct Callout {
 }
 
 ///|
-let callouts : Map[Int, Callout] = Map([])
+let callouts : Map[Int32, Callout] = Map([])
 
 ///|
 /// Context id of the callback currently running (0 outside callbacks).
-let active_context : Ref[Int] = { val: 0 }
+let active_context : Ref[Int32] = { val: 0, }
 
 ///|
 /// True while `on_plugin_start` runs, the only time the host hands out the
 /// plugin configuration.
-let configuring : Ref[Bool] = { val: false }
+let configuring : Ref[Bool] = { val: false, }
 
 ///|
 /// Whether the running HTTP callback belongs to the response direction.
-let in_response_phase : Ref[Bool] = { val: false }
+let in_response_phase : Ref[Bool] = { val: false, }
 
 ///|
 /// Child contexts whose root declined to create a context of that kind
 /// (`new_http_context` / `new_tcp_context` returned `None`); asked once.
-let declined : Map[Int, Bool] = Map([])
+let declined : Map[Int32, Bool] = Map([])
 
 ///|
-fn report(id : Int, callback : String, e : Error) -> Unit {
+fn report(id : Int32, callback : String, e : Error) -> Unit {
   log_error("moonproxy: \{callback} failed in context \{id}: \{e}")
 }
 
@@ -68,13 +68,13 @@ fn report(id : Int, callback : String, e : Error) -> Unit {
 ///   @moonproxy.set_root_context(fn(_id) { MyRoot::new() })
 /// }
 /// ```
-pub fn set_root_context(factory : (Int) -> &RootContext) -> Unit {
+pub fn set_root_context(factory : (Int32) -> &RootContext) -> Unit {
   root_factory.val = Some(factory)
 }
 
 ///|
 /// Id of the context whose callback is running.
-pub fn current_context_id() -> Int {
+pub fn current_context_id() -> Int32 {
   active_context.val
 }
 
@@ -93,13 +93,13 @@ pub fn reset_contexts() -> Unit {
 }
 
 ///|
-fn enter(id : Int) -> Unit {
+fn enter(id : Int32) -> Unit {
   active_context.val = id
   in_response_phase.val = false
 }
 
 ///|
-fn bool_to_int(b : Bool) -> Int {
+fn bool_to_int(b : Bool) -> Int32 {
   if b {
     1
   } else {
@@ -108,7 +108,7 @@ fn bool_to_int(b : Bool) -> Int {
 }
 
 ///|
-fn policy_of(id : Int) -> ErrorPolicy {
+fn policy_of(id : Int32) -> ErrorPolicy {
   let root_id = parents.get(id).unwrap_or(id)
   match roots.get(root_id) {
     Some(r) => r.error_policy()
@@ -119,14 +119,16 @@ fn policy_of(id : Int) -> ErrorPolicy {
 }
 
 ///|
-fn http_context(id : Int) -> &HttpContext? {
+fn http_context(id : Int32) -> &HttpContext? {
   if http_contexts.get(id) is Some(h) {
     return Some(h)
   }
   guard parents.get(id) is Some(root_id) && roots.get(root_id) is Some(root) else {
     return None
   }
-  guard !tcp_contexts.contains(id) && !declined.contains(id) else { return None }
+  guard !tcp_contexts.contains(id) && !declined.contains(id) else {
+    return None
+  }
   guard root.new_http_context(id) is Some(h) else {
     declined[id] = true
     return None
@@ -136,14 +138,16 @@ fn http_context(id : Int) -> &HttpContext? {
 }
 
 ///|
-fn tcp_context(id : Int) -> &TcpContext? {
+fn tcp_context(id : Int32) -> &TcpContext? {
   if tcp_contexts.get(id) is Some(t) {
     return Some(t)
   }
   guard parents.get(id) is Some(root_id) && roots.get(root_id) is Some(root) else {
     return None
   }
-  guard !http_contexts.contains(id) && !declined.contains(id) else { return None }
+  guard !http_contexts.contains(id) && !declined.contains(id) else {
+    return None
+  }
   guard root.new_tcp_context(id) is Some(t) else {
     declined[id] = true
     return None
@@ -155,7 +159,7 @@ fn tcp_context(id : Int) -> &TcpContext? {
 // ---- root lifecycle -------------------------------------------------------
 
 ///|
-pub fn abi_on_context_create(id : Int, parent : Int) -> Unit {
+pub fn abi_on_context_create(id : Int32, parent : Int32) -> Unit {
   enter(id)
   if parent == 0 {
     match root_factory.val {
@@ -174,7 +178,7 @@ pub fn abi_on_context_create(id : Int, parent : Int) -> Unit {
 }
 
 ///|
-pub fn abi_on_vm_start(id : Int, config_size : Int) -> Int {
+pub fn abi_on_vm_start(id : Int32, config_size : Int32) -> Int32 {
   enter(id)
   match roots.get(id) {
     Some(r) =>
@@ -191,7 +195,7 @@ pub fn abi_on_vm_start(id : Int, config_size : Int) -> Int {
 }
 
 ///|
-pub fn abi_on_configure(id : Int, config_size : Int) -> Int {
+pub fn abi_on_configure(id : Int32, config_size : Int32) -> Int32 {
   enter(id)
   match roots.get(id) {
     Some(r) => {
@@ -210,7 +214,7 @@ pub fn abi_on_configure(id : Int, config_size : Int) -> Int {
 }
 
 ///|
-pub fn abi_on_tick(id : Int) -> Unit {
+pub fn abi_on_tick(id : Int32) -> Unit {
   enter(id)
   if roots.get(id) is Some(r) {
     r.on_tick() catch {
@@ -220,7 +224,7 @@ pub fn abi_on_tick(id : Int) -> Unit {
 }
 
 ///|
-pub fn abi_on_queue_ready(id : Int, queue_id : Int) -> Unit {
+pub fn abi_on_queue_ready(id : Int32, queue_id : Int32) -> Unit {
   enter(id)
   if roots.get(id) is Some(r) {
     r.on_queue_ready(queue_id) catch {
@@ -233,7 +237,7 @@ pub fn abi_on_queue_ready(id : Int, queue_id : Int) -> Unit {
 /// `proxy_on_done`: a stream finished, or the host wants to shut a root
 /// context down. Envoy calls it after `on_log` for HTTP streams and before
 /// `on_log` for TCP connections.
-pub fn abi_on_done(id : Int) -> Int {
+pub fn abi_on_done(id : Int32) -> Int32 {
   enter(id)
   if roots.get(id) is Some(r) {
     return bool_to_int(
@@ -258,7 +262,7 @@ pub fn abi_on_done(id : Int) -> Int {
 }
 
 ///|
-pub fn abi_on_log(id : Int) -> Unit {
+pub fn abi_on_log(id : Int32) -> Unit {
   enter(id)
   if tcp_contexts.get(id) is Some(t) {
     t.on_log() catch {
@@ -276,7 +280,7 @@ pub fn abi_on_log(id : Int) -> Unit {
 
 ///|
 /// `proxy_on_delete`: the context is gone; drop everything that refers to it.
-pub fn abi_on_delete(id : Int) -> Unit {
+pub fn abi_on_delete(id : Int32) -> Unit {
   enter(id)
   http_contexts.remove(id)
   tcp_contexts.remove(id)
@@ -298,11 +302,11 @@ pub fn abi_on_delete(id : Int) -> Unit {
 
 ///|
 fn http(
-  id : Int,
+  id : Int32,
   callback : String,
   response : Bool,
   f : (&HttpContext) -> Action raise,
-) -> Int {
+) -> Int32 {
   enter(id)
   in_response_phase.val = response
   guard http_context(id) is Some(h) else { return Continue.to_int() }
@@ -328,12 +332,14 @@ fn http(
 /// also the fallback if the local response is refused.
 fn reject_http(response : Bool) -> Unit {
   if !response {
-    let sent = send_http_response(
-      500,
-      [("content-type", "text/plain")],
-      b"plugin error",
-      details="moonproxy_plugin_error",
-    ) catch {
+    let sent = try
+      send_http_response(
+        500,
+        [("content-type", "text/plain")],
+        b"plugin error",
+        details="moonproxy_plugin_error",
+      )
+    catch {
       _ => false
     } noraise {
       _ => true
@@ -348,42 +354,54 @@ fn reject_http(response : Bool) -> Unit {
 }
 
 ///|
-pub fn abi_on_request_headers(id : Int, num_headers : Int, eos : Int) -> Int {
+pub fn abi_on_request_headers(
+  id : Int32,
+  num_headers : Int32,
+  eos : Int32,
+) -> Int32 {
   http(id, "on_request_headers", false, fn(h) raise {
     h.on_request_headers(num_headers, eos != 0)
   })
 }
 
 ///|
-pub fn abi_on_request_body(id : Int, body_size : Int, eos : Int) -> Int {
+pub fn abi_on_request_body(id : Int32, body_size : Int32, eos : Int32) -> Int32 {
   http(id, "on_request_body", false, fn(h) raise {
     h.on_request_body(body_size, eos != 0)
   })
 }
 
 ///|
-pub fn abi_on_request_trailers(id : Int, num_trailers : Int) -> Int {
+pub fn abi_on_request_trailers(id : Int32, num_trailers : Int32) -> Int32 {
   http(id, "on_request_trailers", false, fn(h) raise {
     h.on_request_trailers(num_trailers)
   })
 }
 
 ///|
-pub fn abi_on_response_headers(id : Int, num_headers : Int, eos : Int) -> Int {
+pub fn abi_on_response_headers(
+  id : Int32,
+  num_headers : Int32,
+  eos : Int32,
+) -> Int32 {
   http(id, "on_response_headers", true, fn(h) raise {
     h.on_response_headers(num_headers, eos != 0)
   })
 }
 
 ///|
-pub fn abi_on_response_body(id : Int, body_size : Int, eos : Int) -> Int {
+pub fn abi_on_response_body(
+  id : Int32,
+  body_size : Int32,
+  eos : Int32,
+) -> Int32 {
   http(id, "on_response_body", true, fn(h) raise {
     h.on_response_body(body_size, eos != 0)
   })
 }
 
 ///|
-pub fn abi_on_response_trailers(id : Int, num_trailers : Int) -> Int {
+pub fn abi_on_response_trailers(id : Int32, num_trailers : Int32) -> Int32 {
   http(id, "on_response_trailers", true, fn(h) raise {
     h.on_response_trailers(num_trailers)
   })
@@ -392,7 +410,11 @@ pub fn abi_on_response_trailers(id : Int, num_trailers : Int) -> Int {
 // ---- TCP ------------------------------------------------------------------
 
 ///|
-fn tcp(id : Int, callback : String, f : (&TcpContext) -> Action raise) -> Int {
+fn tcp(
+  id : Int32,
+  callback : String,
+  f : (&TcpContext) -> Action raise,
+) -> Int32 {
   enter(id)
   guard tcp_context(id) is Some(t) else { return Continue.to_int() }
   let action = f(t) catch {
@@ -421,19 +443,19 @@ fn close_tcp() -> Unit {
 }
 
 ///|
-pub fn abi_on_new_connection(id : Int) -> Int {
+pub fn abi_on_new_connection(id : Int32) -> Int32 {
   tcp(id, "on_new_connection", fn(t) raise { t.on_new_connection() })
 }
 
 ///|
-pub fn abi_on_downstream_data(id : Int, size : Int, eos : Int) -> Int {
+pub fn abi_on_downstream_data(id : Int32, size : Int32, eos : Int32) -> Int32 {
   tcp(id, "on_downstream_data", fn(t) raise {
     t.on_downstream_data(size, eos != 0)
   })
 }
 
 ///|
-pub fn abi_on_downstream_connection_close(id : Int, peer : Int) -> Unit {
+pub fn abi_on_downstream_connection_close(id : Int32, peer : Int32) -> Unit {
   enter(id)
   if tcp_context(id) is Some(t) {
     t.on_downstream_close(PeerType::from_int(peer)) catch {
@@ -443,14 +465,12 @@ pub fn abi_on_downstream_connection_close(id : Int, peer : Int) -> Unit {
 }
 
 ///|
-pub fn abi_on_upstream_data(id : Int, size : Int, eos : Int) -> Int {
-  tcp(id, "on_upstream_data", fn(t) raise {
-    t.on_upstream_data(size, eos != 0)
-  })
+pub fn abi_on_upstream_data(id : Int32, size : Int32, eos : Int32) -> Int32 {
+  tcp(id, "on_upstream_data", fn(t) raise { t.on_upstream_data(size, eos != 0) })
 }
 
 ///|
-pub fn abi_on_upstream_connection_close(id : Int, peer : Int) -> Unit {
+pub fn abi_on_upstream_connection_close(id : Int32, peer : Int32) -> Unit {
   enter(id)
   if tcp_context(id) is Some(t) {
     t.on_upstream_close(PeerType::from_int(peer)) catch {
@@ -463,11 +483,11 @@ pub fn abi_on_upstream_connection_close(id : Int, peer : Int) -> Unit {
 
 ///|
 pub fn abi_on_http_call_response(
-  root_id : Int,
-  token : Int,
-  num_headers : Int,
-  body_size : Int,
-  num_trailers : Int,
+  root_id : Int32,
+  token : Int32,
+  num_headers : Int32,
+  body_size : Int32,
+  num_trailers : Int32,
 ) -> Unit {
   guard callouts.get(token) is Some(c) else { return }
   callouts.remove(token)
@@ -481,7 +501,9 @@ pub fn abi_on_http_call_response(
   // to the stream that issued the callout, not to the root context. If the
   // host cannot switch, those calls would silently hit the root instead.
   if owner != root_id && host().set_effective_context(owner) != Ok {
-    log_error("moonproxy: context \{owner} is gone; dropping http call response")
+    log_error(
+      "moonproxy: context \{owner} is gone; dropping http call response",
+    )
     return
   }
   enter(owner)
@@ -517,14 +539,20 @@ pub fn abi_on_http_call_response(
 
 ///|
 fn resume_http(response : Bool) -> Unit {
-  (if response { resume_http_response() } else { resume_http_request() }) catch {
+  try {
+    if response {
+      resume_http_response()
+    } else {
+      resume_http_request()
+    }
+  } catch {
     _ => ()
   }
 }
 
 ///|
 fn register_callout(
-  token : Int,
+  token : Int32,
   callback : (HttpCallResponse?) -> Unit raise,
 ) -> Unit {
   callouts[token] = {
@@ -536,6 +564,6 @@ fn register_callout(
 
 ///|
 /// Number of HTTP callouts waiting for a response (useful in tests).
-pub fn pending_callouts() -> Int {
+pub fn pending_callouts() -> Int32 {
   callouts.length()
 }

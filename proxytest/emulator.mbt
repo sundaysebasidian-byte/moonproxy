@@ -17,30 +17,34 @@
 struct HostEmulator {
   vm_config : Bytes
   plugin_config : Bytes
-  root_id : Int
-  mut next_id : Int
-  mut active : Int
-  streams : Map[Int, Stream]
+  root_id : Int32
+  mut next_id : Int32
+  mut active : Int32
+  streams : Map[Int32, Stream]
   logs : Array[(@moonproxy.LogLevel, String)]
   mut log_level : @moonproxy.LogLevel
   mut now_nanos : Int64
-  mut tick_ms : Int
-  shared : Map[String, (Bytes, Int)]
-  mut cas_counter : Int
-  queue_ids : Map[String, Int]
-  queues : Map[Int, Array[Bytes]]
-  ready_queues : Array[Int]
+  mut tick_ms : Int32
+  shared : Map[String, (Bytes, Int32)]
+  mut cas_counter : Int32
+  queue_ids : Map[String, Int32]
+  queues : Map[Int32, Array[Bytes]]
+  ready_queues : Array[Int32]
   properties : Map[String, Bytes]
-  metric_ids : Map[String, Int]
+  metric_ids : Map[String, Int32]
   metrics : Array[MetricSlot]
-  calls : Map[Int, HttpCall]
-  mut next_token : Int
-  mut callout_response : (Array[(String, String)], Bytes, Array[(String, String)])?
+  calls : Map[Int32, HttpCall]
+  mut next_token : Int32
+  mut callout_response : (
+    Array[(String, String)],
+    Bytes,
+    Array[(String, String)],
+  )?
   mut done_called : Bool
   /// Inside `on_configure`: the only time Envoy serves the plugin config.
   mut configuring : Bool
   clusters : Array[String]
-  mut cas_failures : Int
+  mut cas_failures : Int32
 }
 
 ///|
@@ -69,8 +73,8 @@ priv struct Stream {
   paused : Map[@moonproxy.BufferType, Bool]
   mut request_paused : Bool
   mut response_paused : Bool
-  mut request_resumes : Int
-  mut response_resumes : Int
+  mut request_resumes : Int32
+  mut response_resumes : Int32
   mut local_response : LocalResponse?
   /// Sent but not yet run through the plugin's response callbacks.
   mut local_pending : Bool
@@ -97,7 +101,7 @@ priv enum Held {
 /// A response sent with `send_http_response` instead of the upstream.
 #derive(Debug, Eq)
 pub struct LocalResponse {
-  status_code : Int
+  status_code : Int32
   headers : Array[(String, String)]
   body : Bytes
   details : String
@@ -107,12 +111,12 @@ pub struct LocalResponse {
 /// An outgoing HTTP callout waiting for `call_on_http_call_response`.
 #derive(Debug, Eq)
 pub struct HttpCall {
-  token : Int
+  token : Int32
   upstream : String
   headers : Array[(String, String)]
   body : Bytes
   trailers : Array[(String, String)]
-  timeout_ms : Int
+  timeout_ms : Int32
 }
 
 ///|
@@ -123,9 +127,9 @@ pub struct HttpCall {
 /// `dispatch_http_call` to any other name fails with `BadArgument`, as in
 /// Envoy. Empty means every name is accepted.
 pub fn HostEmulator::new(
-  plugin_config? : Bytes = b"",
-  vm_config? : Bytes = b"",
-  clusters? : Array[String] = [],
+  plugin_config~ : Bytes = b"",
+  vm_config~ : Bytes = b"",
+  clusters~ : Array[String] = [],
 ) -> HostEmulator {
   let emu : HostEmulator = {
     vm_config,
@@ -168,7 +172,10 @@ pub fn HostEmulator::start(self : HostEmulator) -> Bool {
   let vm = @moonproxy.abi_on_vm_start(self.root_id, self.vm_config.length())
   self.active = self.root_id
   self.configuring = true
-  let cfg = @moonproxy.abi_on_configure(self.root_id, self.plugin_config.length())
+  let cfg = @moonproxy.abi_on_configure(
+    self.root_id,
+    self.plugin_config.length(),
+  )
   self.configuring = false
   vm != 0 && cfg != 0
 }
@@ -204,7 +211,7 @@ fn new_stream(is_http : Bool) -> Stream {
 }
 
 ///|
-fn HostEmulator::create(self : HostEmulator, is_http : Bool) -> Int {
+fn HostEmulator::create(self : HostEmulator, is_http : Bool) -> Int32 {
   let id = self.next_id
   self.next_id += 1
   self.streams[id] = new_stream(is_http)
@@ -215,18 +222,18 @@ fn HostEmulator::create(self : HostEmulator, is_http : Bool) -> Int {
 
 ///|
 /// Start a new HTTP stream and return its context id.
-pub fn HostEmulator::init_http(self : HostEmulator) -> Int {
+pub fn HostEmulator::init_http(self : HostEmulator) -> Int32 {
   self.create(true)
 }
 
 ///|
 /// Start a new TCP connection and return its context id.
-pub fn HostEmulator::init_tcp(self : HostEmulator) -> Int {
+pub fn HostEmulator::init_tcp(self : HostEmulator) -> Int32 {
   self.create(false)
 }
 
 ///|
-fn HostEmulator::stream(self : HostEmulator, id : Int) -> Stream {
+fn HostEmulator::stream(self : HostEmulator, id : Int32) -> Stream {
   match self.streams.get(id) {
     Some(s) => s
     None => abort("proxytest: unknown stream \{id}")
@@ -239,7 +246,7 @@ fn lower_pairs(pairs : Array[(String, String)]) -> Array[(String, String)] {
 }
 
 ///|
-fn to_action(code : Int) -> @moonproxy.Action {
+fn to_action(code : Int32) -> @moonproxy.Action {
   if code == 0 {
     Continue
   } else {
@@ -248,7 +255,7 @@ fn to_action(code : Int) -> @moonproxy.Action {
 }
 
 ///|
-fn b2i(b : Bool) -> Int {
+fn b2i(b : Bool) -> Int32 {
   if b {
     1
   } else {
@@ -261,9 +268,9 @@ fn b2i(b : Bool) -> Int {
 ///|
 pub fn HostEmulator::call_on_request_headers(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   headers : Array[(String, String)],
-  end_of_stream? : Bool = false,
+  end_of_stream~ : Bool = false,
 ) -> @moonproxy.Action {
   let s = self.stream(id)
   s.maps[HttpRequestHeaders] = lower_pairs(headers)
@@ -312,7 +319,7 @@ fn HostEmulator::settle(self : HostEmulator) -> Unit {
 ///|
 fn HostEmulator::replay(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   held : Array[Held],
   response : Bool,
 ) -> Unit {
@@ -390,18 +397,18 @@ fn HostEmulator::deliver_local_responses(self : HostEmulator) -> Unit {
       .get(HttpResponseHeaders)
       .unwrap_or([])
       .filter(fn(kv) { kv.0 != ":status" && kv.0 != "content-length" })
-    s.local_response = Some({ ..r, headers: final_headers, body: final_body })
+    s.local_response = Some({ ..r, headers: final_headers, body: final_body, })
   }
 }
 
 ///|
 fn HostEmulator::body(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   kind : @moonproxy.BufferType,
   chunk : Bytes,
   eos : Bool,
-  call : (Int, Int, Int) -> Int,
+  call : (Int32, Int32, Int32) -> Int32,
 ) -> @moonproxy.Action {
   let s = self.stream(id)
   let prev = if s.paused.get(kind).unwrap_or(false) {
@@ -450,9 +457,9 @@ fn concat(a : Bytes, b : Bytes) -> Bytes {
 ///|
 pub fn HostEmulator::call_on_request_body(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   chunk : Bytes,
-  end_of_stream? : Bool = true,
+  end_of_stream~ : Bool = true,
 ) -> @moonproxy.Action {
   let s = self.stream(id)
   if s.req_stop_all {
@@ -476,7 +483,7 @@ pub fn HostEmulator::call_on_request_body(
 ///|
 pub fn HostEmulator::call_on_request_trailers(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   trailers : Array[(String, String)],
 ) -> @moonproxy.Action {
   let s = self.stream(id)
@@ -503,9 +510,9 @@ pub fn HostEmulator::call_on_request_trailers(
 ///|
 pub fn HostEmulator::call_on_response_headers(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   headers : Array[(String, String)],
-  end_of_stream? : Bool = false,
+  end_of_stream~ : Bool = false,
 ) -> @moonproxy.Action {
   let s = self.stream(id)
   s.maps[HttpResponseHeaders] = lower_pairs(headers)
@@ -528,9 +535,9 @@ pub fn HostEmulator::call_on_response_headers(
 ///|
 pub fn HostEmulator::call_on_response_body(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   chunk : Bytes,
-  end_of_stream? : Bool = true,
+  end_of_stream~ : Bool = true,
 ) -> @moonproxy.Action {
   let s = self.stream(id)
   if s.resp_stop_all {
@@ -556,7 +563,7 @@ pub fn HostEmulator::call_on_response_body(
 ///|
 pub fn HostEmulator::call_on_response_trailers(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   trailers : Array[(String, String)],
 ) -> @moonproxy.Action {
   let s = self.stream(id)
@@ -590,7 +597,7 @@ pub fn HostEmulator::call_on_response_trailers(
 /// writable), then `on_done` and `on_delete` from `Context::onDestroy`, by
 /// which time the header maps are gone. TCP (`Context::onCloseTCP`):
 /// `on_done`, `on_log`, `on_delete`.
-pub fn HostEmulator::complete_stream(self : HostEmulator, id : Int) -> Unit {
+pub fn HostEmulator::complete_stream(self : HostEmulator, id : Int32) -> Unit {
   let s = self.stream(id)
   let set_maps = fn(a : Access) {
     s.req_headers = a
@@ -621,7 +628,7 @@ pub fn HostEmulator::complete_stream(self : HostEmulator, id : Int) -> Unit {
 ///|
 pub fn HostEmulator::call_on_new_connection(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
 ) -> @moonproxy.Action {
   self.active = id
   to_action(@moonproxy.abi_on_new_connection(id))
@@ -630,9 +637,9 @@ pub fn HostEmulator::call_on_new_connection(
 ///|
 pub fn HostEmulator::call_on_downstream_data(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   data : Bytes,
-  end_of_stream? : Bool = false,
+  end_of_stream~ : Bool = false,
 ) -> @moonproxy.Action {
   self.body(id, DownstreamData, data, end_of_stream, fn(i, n, e) {
     @moonproxy.abi_on_downstream_data(i, n, e)
@@ -642,9 +649,9 @@ pub fn HostEmulator::call_on_downstream_data(
 ///|
 pub fn HostEmulator::call_on_upstream_data(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   data : Bytes,
-  end_of_stream? : Bool = false,
+  end_of_stream~ : Bool = false,
 ) -> @moonproxy.Action {
   self.body(id, UpstreamData, data, end_of_stream, fn(i, n, e) {
     @moonproxy.abi_on_upstream_data(i, n, e)
@@ -654,8 +661,8 @@ pub fn HostEmulator::call_on_upstream_data(
 ///|
 pub fn HostEmulator::call_on_downstream_close(
   self : HostEmulator,
-  id : Int,
-  peer? : @moonproxy.PeerType = Remote,
+  id : Int32,
+  peer~ : @moonproxy.PeerType = Remote,
 ) -> Unit {
   self.active = id
   @moonproxy.abi_on_downstream_connection_close(id, peer_to_int(peer))
@@ -664,15 +671,15 @@ pub fn HostEmulator::call_on_downstream_close(
 ///|
 pub fn HostEmulator::call_on_upstream_close(
   self : HostEmulator,
-  id : Int,
-  peer? : @moonproxy.PeerType = Remote,
+  id : Int32,
+  peer~ : @moonproxy.PeerType = Remote,
 ) -> Unit {
   self.active = id
   @moonproxy.abi_on_upstream_connection_close(id, peer_to_int(peer))
 }
 
 ///|
-fn peer_to_int(p : @moonproxy.PeerType) -> Int {
+fn peer_to_int(p : @moonproxy.PeerType) -> Int32 {
   match p {
     Unknown => 0
     Local => 1
@@ -712,7 +719,7 @@ pub fn HostEmulator::shutdown(self : HostEmulator) -> Bool {
 ///|
 /// Make the next `n` compare-and-swap writes to shared data fail with
 /// `CasMismatch`, as if another worker thread had written the key first.
-pub fn HostEmulator::fail_next_cas(self : HostEmulator, n : Int) -> Unit {
+pub fn HostEmulator::fail_next_cas(self : HostEmulator, n : Int32) -> Unit {
   self.cas_failures = n
 }
 
@@ -720,16 +727,18 @@ pub fn HostEmulator::fail_next_cas(self : HostEmulator, n : Int) -> Unit {
 /// Deliver the response of a callout. `headers` empty means the call failed.
 pub fn HostEmulator::call_on_http_call_response(
   self : HostEmulator,
-  token : Int,
+  token : Int32,
   headers : Array[(String, String)],
   body : Bytes,
-  trailers? : Array[(String, String)] = [],
+  trailers~ : Array[(String, String)] = [],
 ) -> Unit {
   guard self.calls.get(token) is Some(_) else {
     abort("proxytest: no pending callout \{token}")
   }
   self.calls.remove(token)
-  self.callout_response = Some((lower_pairs(headers), body, lower_pairs(trailers)))
+  self.callout_response = Some(
+    (lower_pairs(headers), body, lower_pairs(trailers)),
+  )
   self.active = self.root_id
   @moonproxy.abi_on_http_call_response(
     self.root_id,
@@ -747,7 +756,7 @@ pub fn HostEmulator::call_on_http_call_response(
 ///|
 pub fn HostEmulator::request_headers(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
 ) -> Array[(String, String)] {
   self.stream(id).maps.get(HttpRequestHeaders).unwrap_or([])
 }
@@ -755,7 +764,7 @@ pub fn HostEmulator::request_headers(
 ///|
 pub fn HostEmulator::response_headers(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
 ) -> Array[(String, String)] {
   self.stream(id).maps.get(HttpResponseHeaders).unwrap_or([])
 }
@@ -763,7 +772,7 @@ pub fn HostEmulator::response_headers(
 ///|
 fn HostEmulator::data(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
   kind : @moonproxy.BufferType,
 ) -> Bytes {
   let s = self.stream(id)
@@ -775,7 +784,7 @@ fn HostEmulator::data(
 
 ///|
 /// Request body forwarded so far plus whatever is still buffered.
-pub fn HostEmulator::request_body(self : HostEmulator, id : Int) -> Bytes {
+pub fn HostEmulator::request_body(self : HostEmulator, id : Int32) -> Bytes {
   self.data(id, HttpRequestBody)
 }
 
@@ -784,7 +793,7 @@ pub fn HostEmulator::request_body(self : HostEmulator, id : Int) -> Bytes {
 /// `Continue`); excludes anything still held by the plugin.
 pub fn HostEmulator::forwarded_request_body(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
 ) -> Bytes {
   self.stream(id).forwarded.get(HttpRequestBody).unwrap_or(b"")
 }
@@ -793,47 +802,47 @@ pub fn HostEmulator::forwarded_request_body(
 /// Response body the client has actually been sent.
 pub fn HostEmulator::forwarded_response_body(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
 ) -> Bytes {
   self.stream(id).forwarded.get(HttpResponseBody).unwrap_or(b"")
 }
 
 ///|
-pub fn HostEmulator::response_body(self : HostEmulator, id : Int) -> Bytes {
+pub fn HostEmulator::response_body(self : HostEmulator, id : Int32) -> Bytes {
   self.data(id, HttpResponseBody)
 }
 
 ///|
-pub fn HostEmulator::downstream_data(self : HostEmulator, id : Int) -> Bytes {
+pub fn HostEmulator::downstream_data(self : HostEmulator, id : Int32) -> Bytes {
   self.data(id, DownstreamData)
 }
 
 ///|
-pub fn HostEmulator::upstream_data(self : HostEmulator, id : Int) -> Bytes {
+pub fn HostEmulator::upstream_data(self : HostEmulator, id : Int32) -> Bytes {
   self.data(id, UpstreamData)
 }
 
 ///|
 pub fn HostEmulator::local_response(
   self : HostEmulator,
-  id : Int,
+  id : Int32,
 ) -> LocalResponse? {
   self.stream(id).local_response
 }
 
 ///|
 /// How many times the plugin resumed the request with `resume_http_request`.
-pub fn HostEmulator::request_resumes(self : HostEmulator, id : Int) -> Int {
+pub fn HostEmulator::request_resumes(self : HostEmulator, id : Int32) -> Int32 {
   self.stream(id).request_resumes
 }
 
 ///|
-pub fn HostEmulator::response_resumes(self : HostEmulator, id : Int) -> Int {
+pub fn HostEmulator::response_resumes(self : HostEmulator, id : Int32) -> Int32 {
   self.stream(id).response_resumes
 }
 
 ///|
-pub fn HostEmulator::is_request_paused(self : HostEmulator, id : Int) -> Bool {
+pub fn HostEmulator::is_request_paused(self : HostEmulator, id : Int32) -> Bool {
   self.stream(id).request_paused
 }
 
@@ -847,18 +856,18 @@ pub fn HostEmulator::set_log_level(
 }
 
 ///|
-pub fn HostEmulator::upstream_closed(self : HostEmulator, id : Int) -> Bool {
+pub fn HostEmulator::upstream_closed(self : HostEmulator, id : Int32) -> Bool {
   self.stream(id).closed_upstream
 }
 
 ///|
 /// Whether the plugin reset the HTTP stream (`reset_http_stream`).
-pub fn HostEmulator::was_reset(self : HostEmulator, id : Int) -> Bool {
+pub fn HostEmulator::was_reset(self : HostEmulator, id : Int32) -> Bool {
   self.stream(id).reset
 }
 
 ///|
-pub fn HostEmulator::downstream_closed(self : HostEmulator, id : Int) -> Bool {
+pub fn HostEmulator::downstream_closed(self : HostEmulator, id : Int32) -> Bool {
   self.stream(id).closed_downstream
 }
 
@@ -866,7 +875,7 @@ pub fn HostEmulator::downstream_closed(self : HostEmulator, id : Int) -> Bool {
 /// Messages logged at `level` or above, oldest first.
 pub fn HostEmulator::logs(
   self : HostEmulator,
-  level? : @moonproxy.LogLevel = Trace,
+  level~ : @moonproxy.LogLevel = Trace,
 ) -> Array[String] {
   self.logs.filter(fn(l) { l.0 >= level }).map(fn(l) { l.1 })
 }
@@ -906,7 +915,7 @@ pub fn HostEmulator::set_time_nanos(self : HostEmulator, t : Int64) -> Unit {
 }
 
 ///|
-pub fn HostEmulator::tick_period_ms(self : HostEmulator) -> Int {
+pub fn HostEmulator::tick_period_ms(self : HostEmulator) -> Int32 {
   self.tick_ms
 }
 

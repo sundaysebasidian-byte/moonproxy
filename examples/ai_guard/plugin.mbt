@@ -44,7 +44,7 @@
 priv struct Policy {
   allowed_models : Array[String]
   deny_words : Array[String]
-  max_tokens : Int
+  max_tokens : Int32
   paths : Array[String]
 }
 
@@ -87,16 +87,16 @@ fn parse_policy(text : String) -> Policy? {
 
 ///|
 priv enum Verdict {
-  Allow(body~ : String, model~ : String, prompt_chars~ : Int)
+  Allow(body~ : String, model~ : String, prompt_chars~ : Int32)
   Reject(kind~ : String, reason~ : String)
 }
 
 ///|
-fn hex_value(c : Char) -> Int? {
+fn hex_value(c : Char) -> Int32? {
   match c {
-    '0'..='9' => Some(c.to_int() - '0'.to_int())
-    'a'..='f' => Some(c.to_int() - 'a'.to_int() + 10)
-    'A'..='F' => Some(c.to_int() - 'A'.to_int() + 10)
+    '0'..<='9' => Some(c.to_int() - '0'.to_int())
+    'a'..<='f' => Some(c.to_int() - 'a'.to_int() + 10)
+    'A'..<='F' => Some(c.to_int() - 'A'.to_int() + 10)
     _ => None
   }
 }
@@ -114,10 +114,11 @@ fn normalize_path(raw : String) -> String {
       break
     }
     if c == '%' && i + 2 < chars.length() {
-      if hex_value(chars[i + 1]) is Some(h) && hex_value(chars[i + 2]) is Some(l) {
+      if hex_value(chars[i + 1]) is Some(h) &&
+        hex_value(chars[i + 2]) is Some(l) {
         let v = h * 16 + l
         if v < 128 {
-          out.write_char(Int::unsafe_to_char(v))
+          out.write_char(Int32::unsafe_to_char(v))
           i += 3
           continue
         }
@@ -184,7 +185,11 @@ fn prompt_texts(o : Map[String, Json]) -> Array[String] {
 /// The whole decision, kept pure so it can be tested without a host.
 ///
 /// `limit_field` is the token-limit field to add when the request has none.
-fn evaluate(policy : Policy, body : String, limit_field? : String = "max_tokens") -> Verdict {
+fn evaluate(
+  policy : Policy,
+  body : String,
+  limit_field~ : String = "max_tokens",
+) -> Verdict {
   let req = @json.parse(body) catch {
     _ => return Reject(kind="invalid_request", reason="body is not valid JSON")
   }
@@ -246,7 +251,9 @@ fn evaluate(policy : Policy, body : String, limit_field? : String = "max_tokens"
 
 ///|
 fn error_body(kind : String, reason : String) -> Bytes {
-  let j : Json = { "error": { "type": Json::string(kind), "message": Json::string(reason) } }
+  let j : Json = {
+    "error": { "type": Json::string(kind), "message": Json::string(reason) },
+  }
   @utf8.encode(j.stringify())
 }
 
@@ -259,7 +266,7 @@ priv struct GuardRoot {
 }
 
 ///|
-impl @moonproxy.RootContext for GuardRoot with on_plugin_start(self, _) {
+impl @moonproxy.RootContext for GuardRoot with fn on_plugin_start(self, _) {
   let text = @utf8.decode_lossy(@moonproxy.get_plugin_configuration())
   guard parse_policy(text) is Some(p) else {
     @moonproxy.log_error("ai_guard: configuration must be a JSON object")
@@ -268,19 +275,25 @@ impl @moonproxy.RootContext for GuardRoot with on_plugin_start(self, _) {
   self.policy = Some(p)
   self.allowed = Some(@moonproxy.Metric::counter("ai_guard.allowed"))
   self.blocked = Some(@moonproxy.Metric::counter("ai_guard.blocked"))
-  self.prompt_chars = Some(@moonproxy.Metric::histogram("ai_guard.prompt_chars"))
+  self.prompt_chars = Some(
+    @moonproxy.Metric::histogram("ai_guard.prompt_chars"),
+  )
   true
 }
 
 ///|
 /// A bug in the plugin must reject the request, not let it through.
-impl @moonproxy.RootContext for GuardRoot with error_policy(_) {
+impl @moonproxy.RootContext for GuardRoot with fn error_policy(_) {
   FailClosed
 }
 
 ///|
-impl @moonproxy.RootContext for GuardRoot with new_http_context(self, _) {
-  Some(GuardStream::{ root: self, inspecting: false, limit_field: "max_tokens" })
+impl @moonproxy.RootContext for GuardRoot with fn new_http_context(self, _) {
+  Some(GuardStream::{
+    root: self,
+    inspecting: false,
+    limit_field: "max_tokens",
+  })
 }
 
 ///|
@@ -291,14 +304,16 @@ priv struct GuardStream {
 }
 
 ///|
-impl @moonproxy.HttpContext for GuardStream with on_request_headers(
+impl @moonproxy.HttpContext for GuardStream with fn on_request_headers(
   self,
   _,
   end_of_stream,
 ) {
   guard self.root.policy is Some(policy) else { return Continue }
   let verb = @moonproxy.get_request_header(":method").unwrap_or("")
-  let path = normalize_path(@moonproxy.get_request_header(":path").unwrap_or(""))
+  let path = normalize_path(
+    @moonproxy.get_request_header(":path").unwrap_or(""),
+  )
   if verb != "POST" || !policy.paths.iter().any(fn(p) { path.has_suffix(p) }) {
     return Continue
   }
@@ -322,7 +337,11 @@ impl @moonproxy.HttpContext for GuardStream with on_request_headers(
 }
 
 ///|
-impl @moonproxy.HttpContext for GuardStream with on_request_body(self, _, eos) {
+impl @moonproxy.HttpContext for GuardStream with fn on_request_body(
+  self,
+  _,
+  eos,
+) {
   if !self.inspecting {
     return Continue
   }
@@ -336,7 +355,7 @@ impl @moonproxy.HttpContext for GuardStream with on_request_body(self, _, eos) {
 /// A request with trailers (HTTP/2, gRPC-web) ends with them, not with a
 /// data frame marked end-of-stream, so the check must also run here or the
 /// buffered body would be forwarded unchecked.
-impl @moonproxy.HttpContext for GuardStream with on_request_trailers(self, _) {
+impl @moonproxy.HttpContext for GuardStream with fn on_request_trailers(self, _) {
   if !self.inspecting {
     return Continue
   }
@@ -380,6 +399,11 @@ fn GuardStream::inspect(self : GuardStream) -> @moonproxy.Action raise {
 ///|
 fn init {
   @moonproxy.set_root_context(fn(_) {
-    GuardRoot::{ policy: None, allowed: None, blocked: None, prompt_chars: None }
+    GuardRoot::{
+      policy: None,
+      allowed: None,
+      blocked: None,
+      prompt_chars: None,
+    }
   })
 }

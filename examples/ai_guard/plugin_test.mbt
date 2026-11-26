@@ -3,7 +3,10 @@ let policy : String =
   #|{"allowed_models":["gpt-4o-mini"],"deny_words":["Internal-Only"],"max_tokens":256}
 
 ///|
-fn send(body : String, path? : String = "/v1/chat/completions") -> (@proxytest.HostEmulator, Int) {
+fn send(
+  body : String,
+  path~ : String = "/v1/chat/completions",
+) -> (@proxytest.HostEmulator, Int32) {
   let emu = @proxytest.HostEmulator::new(plugin_config=@utf8.encode(policy))
   guard emu.start() else { abort("start") }
   let id = emu.init_http()
@@ -16,7 +19,11 @@ fn send(body : String, path? : String = "/v1/chat/completions") -> (@proxytest.H
   ])
   // Split the body to check that the plugin waits for all of it.
   let half = bytes.length() / 2
-  let _ = emu.call_on_request_body(id, bytes[:half].to_owned(), end_of_stream=false)
+  let _ = emu.call_on_request_body(
+    id,
+    bytes[:half].to_owned(),
+    end_of_stream=false,
+  )
   let last = emu.call_on_request_body(id, bytes[half:].to_owned())
   ignore(first)
   ignore(last)
@@ -24,8 +31,12 @@ fn send(body : String, path? : String = "/v1/chat/completions") -> (@proxytest.H
 }
 
 ///|
-fn header(emu : @proxytest.HostEmulator, id : Int, name : String) -> String? {
-  emu.request_headers(id).iter().find_first(fn(kv) { kv.0 == name }).map(fn(kv) { kv.1 })
+fn header(emu : @proxytest.HostEmulator, id : Int32, name : String) -> String? {
+  emu
+  .request_headers(id)
+  .iter()
+  .find_first(fn(kv) { kv.0 == name })
+  .map(fn(kv) { kv.1 })
 }
 
 ///|
@@ -105,12 +116,15 @@ test "a request that ends with trailers is still checked" {
 
 ///|
 test "path tricks and other LLM endpoints are checked too" {
-  for path in [
-    "/v1/Chat//complet%69ons/", "/v1/chat/completions?x=1", "/v1/completions",
-    "/v1/responses",
-  ] {
+  for
+    path in [
+      "/v1/Chat//complet%69ons/", "/v1/chat/completions?x=1", "/v1/completions",
+      "/v1/responses",
+    ] {
     let (emu, id) = send("{\"model\":\"gpt-5\",\"input\":\"hi\"}", path~)
-    guard emu.local_response(id) is Some(r) else { fail("not checked: \{path}") }
+    guard emu.local_response(id) is Some(r) else {
+      fail("not checked: \{path}")
+    }
     inspect(r.status_code, content="400")
   }
   let (emu, id) = send(
@@ -130,7 +144,9 @@ test "token limits must be numbers; null or none gets the cap" {
     guard emu.local_response(id) is Some(r) else { fail("accepted \{bad}") }
     inspect(r.details, content="ai_guard_invalid_request")
   }
-  let (emu, id) = send("{\"model\":\"gpt-4o-mini\",\"max_tokens\":null,\"messages\":[]}")
+  let (emu, id) = send(
+    "{\"model\":\"gpt-4o-mini\",\"max_tokens\":null,\"messages\":[]}",
+  )
   inspect(
     @utf8.decode_lossy(emu.forwarded_request_body(id)),
     content="{\"model\":\"gpt-4o-mini\",\"max_tokens\":256,\"messages\":[]}",
@@ -143,7 +159,10 @@ test "token limits must be numbers; null or none gets the cap" {
     @utf8.decode_lossy(emu.forwarded_request_body(id)),
     content="{\"model\":\"gpt-4o-mini\",\"max_output_tokens\":256,\"input\":\"hi\"}",
   )
-  let (emu, id) = send("{\"model\":\"gpt-4o-mini\",\"input\":\"hi\"}", path="/v1/responses")
+  let (emu, id) = send(
+    "{\"model\":\"gpt-4o-mini\",\"input\":\"hi\"}",
+    path="/v1/responses",
+  )
   inspect(
     @utf8.decode_lossy(emu.forwarded_request_body(id)),
     content="{\"model\":\"gpt-4o-mini\",\"input\":\"hi\",\"max_output_tokens\":256}",

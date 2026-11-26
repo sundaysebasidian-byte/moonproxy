@@ -1,0 +1,55 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "sundaysebasidian-byte/moonproxy/examples/rate_limit"
+
+// Values
+pub fn proxy_abi_version_0_2_1() -> Unit
+
+pub fn proxy_on_configure(Int32, Int32) -> Int32
+
+pub fn proxy_on_context_create(Int32, Int32) -> Unit
+
+pub fn proxy_on_delete(Int32) -> Unit
+
+pub fn proxy_on_done(Int32) -> Int32
+
+pub fn proxy_on_downstream_connection_close(Int32, Int32) -> Unit
+
+pub fn proxy_on_downstream_data(Int32, Int32, Int32) -> Int32
+
+pub fn proxy_on_http_call_response(Int32, Int32, Int32, Int32, Int32) -> Unit
+
+pub fn proxy_on_log(Int32) -> Unit
+
+pub fn proxy_on_memory_allocate(Int32) -> Int32
+
+pub fn proxy_on_new_connection(Int32) -> Int32
+
+pub fn proxy_on_queue_ready(Int32, Int32) -> Unit
+
+pub fn proxy_on_request_body(Int32, Int32, Int32) -> Int32
+
+pub fn proxy_on_request_headers(Int32, Int32, Int32) -> Int32
+
+pub fn proxy_on_request_trailers(Int32, Int32) -> Int32
+
+pub fn proxy_on_response_body(Int32, Int32, Int32) -> Int32
+
+pub fn proxy_on_response_headers(Int32, Int32, Int32) -> Int32
+
+pub fn proxy_on_response_trailers(Int32, Int32) -> Int32
+
+pub fn proxy_on_tick(Int32) -> Unit
+
+pub fn proxy_on_upstream_connection_close(Int32, Int32) -> Unit
+
+pub fn proxy_on_upstream_data(Int32, Int32, Int32) -> Int32
+
+pub fn proxy_on_vm_start(Int32, Int32) -> Int32
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

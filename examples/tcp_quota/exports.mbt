@@ -7,106 +7,150 @@ pub fn proxy_abi_version_0_2_1() -> Unit {
 }
 
 ///|
-pub fn proxy_on_memory_allocate(size : Int) -> Int {
+pub fn proxy_on_memory_allocate(size : Int32) -> Int32 {
   @moonproxy.memory_allocate(size)
 }
 
 ///|
-pub fn proxy_on_context_create(context_id : Int, parent_id : Int) -> Unit {
+pub fn proxy_on_context_create(context_id : Int32, parent_id : Int32) -> Unit {
   @moonproxy.abi_on_context_create(context_id, parent_id)
 }
 
 ///|
-pub fn proxy_on_vm_start(context_id : Int, config_size : Int) -> Int {
+pub fn proxy_on_vm_start(context_id : Int32, config_size : Int32) -> Int32 {
   @moonproxy.abi_on_vm_start(context_id, config_size)
 }
 
 ///|
-pub fn proxy_on_configure(context_id : Int, config_size : Int) -> Int {
+pub fn proxy_on_configure(context_id : Int32, config_size : Int32) -> Int32 {
   @moonproxy.abi_on_configure(context_id, config_size)
 }
 
 ///|
-pub fn proxy_on_tick(context_id : Int) -> Unit {
+pub fn proxy_on_tick(context_id : Int32) -> Unit {
   @moonproxy.abi_on_tick(context_id)
 }
 
 ///|
-pub fn proxy_on_queue_ready(context_id : Int, queue_id : Int) -> Unit {
+pub fn proxy_on_queue_ready(context_id : Int32, queue_id : Int32) -> Unit {
   @moonproxy.abi_on_queue_ready(context_id, queue_id)
 }
 
 ///|
-pub fn proxy_on_done(context_id : Int) -> Int {
+pub fn proxy_on_done(context_id : Int32) -> Int32 {
   @moonproxy.abi_on_done(context_id)
 }
 
 ///|
-pub fn proxy_on_log(context_id : Int) -> Unit {
+pub fn proxy_on_log(context_id : Int32) -> Unit {
   @moonproxy.abi_on_log(context_id)
 }
 
 ///|
-pub fn proxy_on_delete(context_id : Int) -> Unit {
+pub fn proxy_on_delete(context_id : Int32) -> Unit {
   @moonproxy.abi_on_delete(context_id)
 }
 
 ///|
-pub fn proxy_on_request_headers(context_id : Int, num_headers : Int, end_of_stream : Int) -> Int {
+pub fn proxy_on_request_headers(
+  context_id : Int32,
+  num_headers : Int32,
+  end_of_stream : Int32,
+) -> Int32 {
   @moonproxy.abi_on_request_headers(context_id, num_headers, end_of_stream)
 }
 
 ///|
-pub fn proxy_on_request_body(context_id : Int, body_size : Int, end_of_stream : Int) -> Int {
+pub fn proxy_on_request_body(
+  context_id : Int32,
+  body_size : Int32,
+  end_of_stream : Int32,
+) -> Int32 {
   @moonproxy.abi_on_request_body(context_id, body_size, end_of_stream)
 }
 
 ///|
-pub fn proxy_on_request_trailers(context_id : Int, num_trailers : Int) -> Int {
+pub fn proxy_on_request_trailers(
+  context_id : Int32,
+  num_trailers : Int32,
+) -> Int32 {
   @moonproxy.abi_on_request_trailers(context_id, num_trailers)
 }
 
 ///|
-pub fn proxy_on_response_headers(context_id : Int, num_headers : Int, end_of_stream : Int) -> Int {
+pub fn proxy_on_response_headers(
+  context_id : Int32,
+  num_headers : Int32,
+  end_of_stream : Int32,
+) -> Int32 {
   @moonproxy.abi_on_response_headers(context_id, num_headers, end_of_stream)
 }
 
 ///|
-pub fn proxy_on_response_body(context_id : Int, body_size : Int, end_of_stream : Int) -> Int {
+pub fn proxy_on_response_body(
+  context_id : Int32,
+  body_size : Int32,
+  end_of_stream : Int32,
+) -> Int32 {
   @moonproxy.abi_on_response_body(context_id, body_size, end_of_stream)
 }
 
 ///|
-pub fn proxy_on_response_trailers(context_id : Int, num_trailers : Int) -> Int {
+pub fn proxy_on_response_trailers(
+  context_id : Int32,
+  num_trailers : Int32,
+) -> Int32 {
   @moonproxy.abi_on_response_trailers(context_id, num_trailers)
 }
 
 ///|
-pub fn proxy_on_new_connection(context_id : Int) -> Int {
+pub fn proxy_on_new_connection(context_id : Int32) -> Int32 {
   @moonproxy.abi_on_new_connection(context_id)
 }
 
 ///|
-pub fn proxy_on_downstream_data(context_id : Int, data_size : Int, end_of_stream : Int) -> Int {
+pub fn proxy_on_downstream_data(
+  context_id : Int32,
+  data_size : Int32,
+  end_of_stream : Int32,
+) -> Int32 {
   @moonproxy.abi_on_downstream_data(context_id, data_size, end_of_stream)
 }
 
 ///|
-pub fn proxy_on_downstream_connection_close(context_id : Int, peer_type : Int) -> Unit {
+pub fn proxy_on_downstream_connection_close(
+  context_id : Int32,
+  peer_type : Int32,
+) -> Unit {
   @moonproxy.abi_on_downstream_connection_close(context_id, peer_type)
 }
 
 ///|
-pub fn proxy_on_upstream_data(context_id : Int, data_size : Int, end_of_stream : Int) -> Int {
+pub fn proxy_on_upstream_data(
+  context_id : Int32,
+  data_size : Int32,
+  end_of_stream : Int32,
+) -> Int32 {
   @moonproxy.abi_on_upstream_data(context_id, data_size, end_of_stream)
 }
 
 ///|
-pub fn proxy_on_upstream_connection_close(context_id : Int, peer_type : Int) -> Unit {
+pub fn proxy_on_upstream_connection_close(
+  context_id : Int32,
+  peer_type : Int32,
+) -> Unit {
   @moonproxy.abi_on_upstream_connection_close(context_id, peer_type)
 }
 
 ///|
-pub fn proxy_on_http_call_response(context_id : Int, token : Int, num_headers : Int, body_size : Int, num_trailers : Int) -> Unit {
-  @moonproxy.abi_on_http_call_response(context_id, token, num_headers, body_size, num_trailers)
+pub fn proxy_on_http_call_response(
+  context_id : Int32,
+  token : Int32,
+  num_headers : Int32,
+  body_size : Int32,
+  num_trailers : Int32,
+) -> Unit {
+  @moonproxy.abi_on_http_call_response(
+    context_id, token, num_headers, body_size, num_trailers,
+  )
 }

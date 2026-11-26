@@ -2,13 +2,19 @@
 fn run(
   headers : Array[(String, String)],
   chunks : Array[Bytes],
-) -> (@proxytest.HostEmulator, Int) {
+) -> (@proxytest.HostEmulator, Int32) {
   let emu = @proxytest.HostEmulator::new()
-  assert_true(emu.start()) catch { _ => abort("start") }
+  assert_true(emu.start()) catch {
+    _ => abort("start")
+  }
   let id = emu.init_http()
   let _ = emu.call_on_response_headers(id, headers)
   for i, c in chunks {
-    let _ = emu.call_on_response_body(id, c, end_of_stream=i == chunks.length() - 1)
+    let _ = emu.call_on_response_body(
+      id,
+      c,
+      end_of_stream=i == chunks.length() - 1,
+    )
   }
   (emu, id)
 }
@@ -42,8 +48,14 @@ test "a body that ends with trailers is masked before it leaves" {
   let emu = @proxytest.HostEmulator::new()
   assert_true(emu.start())
   let id = emu.init_http()
-  let _ = emu.call_on_response_headers(id, [("content-type", "application/json")])
-  let a = emu.call_on_response_body(id, b"{\"tel\":\"13812345678\"}", end_of_stream=false)
+  let _ = emu.call_on_response_headers(id, [
+    ("content-type", "application/json"),
+  ])
+  let a = emu.call_on_response_body(
+    id,
+    b"{\"tel\":\"13812345678\"}",
+    end_of_stream=false,
+  )
   debug_inspect(a, content="Pause")
   inspect(emu.forwarded_response_body(id).length(), content="0")
   let _ = emu.call_on_response_trailers(id, [("x-checksum", "1")])
@@ -55,14 +67,18 @@ test "a body that ends with trailers is masked before it leaves" {
 
 ///|
 test "grpc responses are not treated as text" {
-  let (emu, id) = run([("content-type", "application/grpc+json")], [b"13812345678"])
+  let (emu, id) = run([("content-type", "application/grpc+json")], [
+    b"13812345678",
+  ])
   inspect(emu.response_body(id), content="b\"13812345678\"")
 }
 
 ///|
 test "accept-encoding is stripped so the upstream answers in plain text" {
   let emu = @proxytest.HostEmulator::new()
-  assert_true(emu.start()) catch { _ => abort("start") }
+  assert_true(emu.start()) catch {
+    _ => abort("start")
+  }
   let id = emu.init_http()
   let _ = emu.call_on_request_headers(id, [
     (":path", "/"),

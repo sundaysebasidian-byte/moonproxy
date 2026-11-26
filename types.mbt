@@ -12,11 +12,11 @@ pub(all) enum Status {
   CasMismatch
   InternalFailure
   Unimplemented
-  Other(Int)
+  Other(Int32)
 }
 
 ///|
-pub fn Status::from_int(code : Int) -> Status {
+pub fn Status::from_int(code : Int32) -> Status {
   match code {
     0 => Ok
     1 => NotFound
@@ -33,7 +33,7 @@ pub fn Status::from_int(code : Int) -> Status {
 }
 
 ///|
-pub fn Status::to_int(self : Status) -> Int {
+pub fn Status::to_int(self : Status) -> Int32 {
   match self {
     Ok => 0
     NotFound => 1
@@ -57,7 +57,7 @@ pub suberror HostError {
 }
 
 ///|
-pub impl Show for Status with output(self, logger) {
+pub impl Show for Status with fn output(self, logger) {
   logger.write_string(
     match self {
       Ok => "Ok"
@@ -76,7 +76,7 @@ pub impl Show for Status with output(self, logger) {
 }
 
 ///|
-pub impl Show for HostError with output(self, logger) {
+pub impl Show for HostError with fn output(self, logger) {
   let HostError(op, status) = self
   logger.write_string("\{op}: \{status}")
 }
@@ -90,7 +90,7 @@ pub(all) enum Action {
 }
 
 ///|
-pub fn Action::to_int(self : Action) -> Int {
+pub fn Action::to_int(self : Action) -> Int32 {
   match self {
     Continue => 0
     Pause => 1
@@ -109,7 +109,7 @@ pub(all) enum LogLevel {
 }
 
 ///|
-pub fn LogLevel::to_int(self : LogLevel) -> Int {
+pub fn LogLevel::to_int(self : LogLevel) -> Int32 {
   match self {
     Trace => 0
     Debug => 1
@@ -121,7 +121,7 @@ pub fn LogLevel::to_int(self : LogLevel) -> Int {
 }
 
 ///|
-pub fn LogLevel::from_int(level : Int) -> LogLevel {
+pub fn LogLevel::from_int(level : Int32) -> LogLevel {
   match level {
     0 => Trace
     1 => Debug
@@ -146,7 +146,7 @@ pub(all) enum BufferType {
 }
 
 ///|
-pub fn BufferType::to_int(self : BufferType) -> Int {
+pub fn BufferType::to_int(self : BufferType) -> Int32 {
   match self {
     HttpRequestBody => 0
     HttpResponseBody => 1
@@ -173,7 +173,7 @@ pub(all) enum MapType {
 }
 
 ///|
-pub fn MapType::to_int(self : MapType) -> Int {
+pub fn MapType::to_int(self : MapType) -> Int32 {
   match self {
     HttpRequestHeaders => 0
     HttpRequestTrailers => 1
@@ -196,7 +196,7 @@ pub(all) enum StreamType {
 }
 
 ///|
-pub fn StreamType::to_int(self : StreamType) -> Int {
+pub fn StreamType::to_int(self : StreamType) -> Int32 {
   match self {
     Request => 0
     Response => 1
@@ -214,7 +214,7 @@ pub(all) enum MetricType {
 }
 
 ///|
-pub fn MetricType::to_int(self : MetricType) -> Int {
+pub fn MetricType::to_int(self : MetricType) -> Int32 {
   match self {
     Counter => 0
     Gauge => 1
@@ -231,7 +231,7 @@ pub(all) enum PeerType {
 }
 
 ///|
-pub fn PeerType::from_int(p : Int) -> PeerType {
+pub fn PeerType::from_int(p : Int32) -> PeerType {
   match p {
     1 => Local
     2 => Remote
@@ -240,7 +240,7 @@ pub fn PeerType::from_int(p : Int) -> PeerType {
 }
 
 ///|
-pub impl Show for Action with output(self, logger) {
+pub impl Show for Action with fn output(self, logger) {
   logger.write_string(
     match self {
       Continue => "Continue"
@@ -250,7 +250,7 @@ pub impl Show for Action with output(self, logger) {
 }
 
 ///|
-pub impl Show for LogLevel with output(self, logger) {
+pub impl Show for LogLevel with fn output(self, logger) {
   logger.write_string(
     match self {
       Trace => "trace"

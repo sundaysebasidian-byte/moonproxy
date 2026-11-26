@@ -1,8 +1,11 @@
 ///|
 fn start(cfg : String) -> @proxytest.HostEmulator {
-  let cfg = cfg[:cfg.length() - 1].to_owned() + ", \"key_header\": \"x-client-id\"}"
+  let cfg = cfg[:cfg.length() - 1].to_owned() +
+    ", \"key_header\": \"x-client-id\"}"
   let emu = @proxytest.HostEmulator::new(plugin_config=@utf8.encode(cfg))
-  assert_true(emu.start()) catch { _ => abort("start failed") }
+  assert_true(emu.start()) catch {
+    _ => abort("start failed")
+  }
   emu
 }
 
@@ -65,7 +68,10 @@ test "a corrupted bucket is reset instead of crashing" {
 
 ///|
 test "configuration is validated" {
-  for cfg in ["{}", "{\"rate_per_second\": 0}", "{\"rate_per_second\": 1.5}", "{\"rate_per_second\": 1, \"burst\": -1}"] {
+  for
+    cfg in [
+      "{}", "{\"rate_per_second\": 0}", "{\"rate_per_second\": 1.5}", "{\"rate_per_second\": 1, \"burst\": -1}",
+    ] {
     let emu = @proxytest.HostEmulator::new(plugin_config=@utf8.encode(cfg))
     inspect(emu.start(), content="false")
   }
@@ -100,7 +106,9 @@ test "without key_header clients are told apart by source IP, not headers" {
   let emu = @proxytest.HostEmulator::new(
     plugin_config=b"{\"rate_per_second\": 1, \"burst\": 1}",
   )
-  assert_true(emu.start()) catch { _ => abort("start failed") }
+  assert_true(emu.start()) catch {
+    _ => abort("start failed")
+  }
   let from = fn(addr : String, forged : String) {
     emu.set_property(["source", "address"], @utf8.encode(addr))
     let id = emu.init_http()
@@ -114,7 +122,10 @@ test "without key_header clients are told apart by source IP, not headers" {
 
 ///|
 test "buckets is validated" {
-  for cfg in ["{\"rate_per_second\": 1, \"buckets\": 0}", "{\"rate_per_second\": 1, \"buckets\": 2000000}"] {
+  for
+    cfg in [
+      "{\"rate_per_second\": 1, \"buckets\": 0}", "{\"rate_per_second\": 1, \"buckets\": 2000000}",
+    ] {
     let emu = @proxytest.HostEmulator::new(plugin_config=@utf8.encode(cfg))
     inspect(emu.start(), content="false")
   }

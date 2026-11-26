@@ -14,15 +14,28 @@ test "emails" {
 ///|
 test "phones, cards and ids" {
   inspect(
-    @pii_mask.mask_pii("{\"phone\":\"13812345678\",\"card\":\"6222021234567890128\"}"),
+    @pii_mask.mask_pii(
+      "{\"phone\":\"13812345678\",\"card\":\"6222021234567890128\"}",
+    ),
     content="{\"phone\":\"138****5678\",\"card\":\"***************0128\"}",
   )
-  inspect(@pii_mask.mask_pii("visa 4111111111111111"), content="visa ************1111")
-  inspect(@pii_mask.mask_pii("id 11010519491231002X"), content="id **************002X")
-  inspect(@pii_mask.mask_pii("tel +8613812345678"), content="tel +86138****5678")
+  inspect(
+    @pii_mask.mask_pii("visa 4111111111111111"),
+    content="visa ************1111",
+  )
+  inspect(
+    @pii_mask.mask_pii("id 11010519491231002X"),
+    content="id **************002X",
+  )
+  inspect(
+    @pii_mask.mask_pii("tel +8613812345678"),
+    content="tel +86138****5678",
+  )
   // Other lengths, numbers glued to letters, and non-mobile prefixes stay.
   inspect(
-    @pii_mask.mask_pii("order 20240101 v13812345678 23812345678 sha 1234567890123abc"),
+    @pii_mask.mask_pii(
+      "order 20240101 v13812345678 23812345678 sha 1234567890123abc",
+    ),
     content="order 20240101 v13812345678 23812345678 sha 1234567890123abc",
   )
 }

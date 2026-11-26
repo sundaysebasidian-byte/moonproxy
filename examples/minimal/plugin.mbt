@@ -4,15 +4,15 @@
 priv struct Root {}
 
 ///|
-impl @moonproxy.RootContext for Root with new_http_context(_, _) {
-  Some(Stream::{  })
+impl @moonproxy.RootContext for Root with fn new_http_context(_, _) {
+  Some(Stream::{ })
 }
 
 ///|
 priv struct Stream {}
 
 ///|
-impl @moonproxy.HttpContext for Stream with on_request_headers(_, _, _) {
+impl @moonproxy.HttpContext for Stream with fn on_request_headers(_, _, _) {
   if @moonproxy.get_request_header("x-api-key") is None {
     @moonproxy.send_http_response(401, [], b"missing key")
     return Pause
@@ -23,5 +23,5 @@ impl @moonproxy.HttpContext for Stream with on_request_headers(_, _, _) {
 
 ///|
 fn init {
-  @moonproxy.set_root_context(fn(_) { Root::{  } })
+  @moonproxy.set_root_context(fn(_) { Root::{ } })
 }

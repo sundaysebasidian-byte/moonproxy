@@ -3,7 +3,7 @@
 /// is running (the "effective context" of the host).
 
 ///|
-const MAX_SIZE : Int = 0x7fffffff
+const MAX_SIZE : Int32 = 0x7fffffff
 
 ///|
 fn check(op : String, st : Status) -> Unit raise HostError {
@@ -65,7 +65,7 @@ pub fn current_time_nanos() -> Int64 {
 
 ///|
 /// Call `RootContext::on_tick` every `ms` milliseconds (0 disables it).
-pub fn set_tick_period_ms(ms : Int) -> Unit raise HostError {
+pub fn set_tick_period_ms(ms : Int32) -> Unit raise HostError {
   check("set_tick_period_ms", host().set_tick_period_ms(ms))
 }
 
@@ -75,8 +75,8 @@ pub fn set_tick_period_ms(ms : Int) -> Unit raise HostError {
 fn get_buffer_or_empty(
   op : String,
   kind : BufferType,
-  start : Int,
-  size : Int,
+  start : Int32,
+  size : Int32,
 ) -> Bytes raise HostError {
   let (st, data) = host().get_buffer(kind, start, size)
   match st {
@@ -103,7 +103,12 @@ pub fn get_plugin_configuration() -> Bytes raise HostError {
   if !configuring.val {
     raise HostError("get_plugin_configuration", NotFound)
   }
-  get_buffer_or_empty("get_plugin_configuration", PluginConfiguration, 0, MAX_SIZE)
+  get_buffer_or_empty(
+    "get_plugin_configuration",
+    PluginConfiguration,
+    0,
+    MAX_SIZE,
+  )
 }
 
 // ---- buffers ------------------------------------------------------------
@@ -112,8 +117,8 @@ pub fn get_plugin_configuration() -> Bytes raise HostError {
 /// Read `size` bytes starting at `start` from a buffer.
 pub fn get_buffer(
   kind : BufferType,
-  start? : Int = 0,
-  size? : Int = MAX_SIZE,
+  start~ : Int32 = 0,
+  size~ : Int32 = MAX_SIZE,
 ) -> Bytes raise HostError {
   get_buffer_or_empty("get_buffer", kind, start, size)
 }
@@ -123,8 +128,8 @@ pub fn get_buffer(
 /// drains `size` bytes and prepends `data`; `start >= length` appends.
 pub fn set_buffer(
   kind : BufferType,
-  start : Int,
-  size : Int,
+  start : Int32,
+  size : Int32,
   data : Bytes,
 ) -> Unit raise HostError {
   check("set_buffer", host().set_buffer(kind, start, size, data))
@@ -196,7 +201,9 @@ pub fn replace_upstream_data(data : Bytes) -> Unit raise HostError {
 
 ///|
 /// All pairs of a header map, in host order (duplicates preserved).
-pub fn get_header_map(kind : MapType) -> Array[(String, String)] raise HostError {
+pub fn get_header_map(
+  kind : MapType,
+) -> Array[(String, String)] raise HostError {
   let (st, data) = host().get_map_pairs(kind)
   match st {
     Ok => deserialize_map(data)
@@ -257,7 +264,9 @@ pub fn get_request_headers() -> Array[(String, String)] raise HostError {
 }
 
 ///|
-pub fn set_request_headers(pairs : Array[(String, String)]) -> Unit raise HostError {
+pub fn set_request_headers(
+  pairs : Array[(String, String)],
+) -> Unit raise HostError {
   set_header_map(HttpRequestHeaders, pairs)
 }
 
@@ -267,12 +276,18 @@ pub fn get_request_header(name : String) -> String? raise HostError {
 }
 
 ///|
-pub fn replace_request_header(name : String, value : String) -> Unit raise HostError {
+pub fn replace_request_header(
+  name : String,
+  value : String,
+) -> Unit raise HostError {
   replace_header(HttpRequestHeaders, name, value)
 }
 
 ///|
-pub fn add_request_header(name : String, value : String) -> Unit raise HostError {
+pub fn add_request_header(
+  name : String,
+  value : String,
+) -> Unit raise HostError {
   add_header(HttpRequestHeaders, name, value)
 }
 
@@ -287,7 +302,9 @@ pub fn get_response_headers() -> Array[(String, String)] raise HostError {
 }
 
 ///|
-pub fn set_response_headers(pairs : Array[(String, String)]) -> Unit raise HostError {
+pub fn set_response_headers(
+  pairs : Array[(String, String)],
+) -> Unit raise HostError {
   set_header_map(HttpResponseHeaders, pairs)
 }
 
@@ -297,12 +314,18 @@ pub fn get_response_header(name : String) -> String? raise HostError {
 }
 
 ///|
-pub fn replace_response_header(name : String, value : String) -> Unit raise HostError {
+pub fn replace_response_header(
+  name : String,
+  value : String,
+) -> Unit raise HostError {
   replace_header(HttpResponseHeaders, name, value)
 }
 
 ///|
-pub fn add_response_header(name : String, value : String) -> Unit raise HostError {
+pub fn add_response_header(
+  name : String,
+  value : String,
+) -> Unit raise HostError {
   add_header(HttpResponseHeaders, name, value)
 }
 
@@ -322,22 +345,32 @@ pub fn get_response_trailers() -> Array[(String, String)] raise HostError {
 }
 
 ///|
-pub fn set_request_trailers(pairs : Array[(String, String)]) -> Unit raise HostError {
+pub fn set_request_trailers(
+  pairs : Array[(String, String)],
+) -> Unit raise HostError {
   set_header_map(HttpRequestTrailers, pairs)
 }
 
 ///|
-pub fn set_response_trailers(pairs : Array[(String, String)]) -> Unit raise HostError {
+pub fn set_response_trailers(
+  pairs : Array[(String, String)],
+) -> Unit raise HostError {
   set_header_map(HttpResponseTrailers, pairs)
 }
 
 ///|
-pub fn replace_request_trailer(name : String, value : String) -> Unit raise HostError {
+pub fn replace_request_trailer(
+  name : String,
+  value : String,
+) -> Unit raise HostError {
   replace_header(HttpRequestTrailers, name, value)
 }
 
 ///|
-pub fn replace_response_trailer(name : String, value : String) -> Unit raise HostError {
+pub fn replace_response_trailer(
+  name : String,
+  value : String,
+) -> Unit raise HostError {
   replace_header(HttpResponseTrailers, name, value)
 }
 
@@ -387,11 +420,11 @@ pub fn close_upstream() -> Unit raise HostError {
 /// Answer the request directly without contacting the upstream. Return
 /// `Pause` from the current callback afterwards.
 pub fn send_http_response(
-  status_code : Int,
+  status_code : Int32,
   headers : Array[(String, String)],
   body : Bytes,
-  details? : String = "",
-  grpc_status? : Int = -1,
+  details~ : String = "",
+  grpc_status~ : Int32 = -1,
 ) -> Unit raise HostError {
   check(
     "send_http_response",
@@ -410,7 +443,7 @@ pub fn send_http_response(
 ///|
 /// The response to an HTTP callout, read eagerly before the callback runs.
 pub(all) struct HttpCallResponse {
-  status_code : Int
+  status_code : Int32
   headers : Array[(String, String)]
   body : Bytes
   trailers : Array[(String, String)]
@@ -418,7 +451,10 @@ pub(all) struct HttpCallResponse {
 
 ///|
 /// Value of one response header (first match, names compared lower-case).
-pub fn HttpCallResponse::header(self : HttpCallResponse, name : String) -> String? {
+pub fn HttpCallResponse::header(
+  self : HttpCallResponse,
+  name : String,
+) -> String? {
   let name = name.to_lower()
   for pair in self.headers {
     if pair.0 == name {
@@ -429,7 +465,7 @@ pub fn HttpCallResponse::header(self : HttpCallResponse, name : String) -> Strin
 }
 
 ///|
-fn parse_status(s : String) -> Int {
+fn parse_status(s : String) -> Int32 {
   let mut n = 0
   for c in s {
     guard c >= '0' && c <= '9' && n < 1000 else { return 0 }
@@ -440,8 +476,8 @@ fn parse_status(s : String) -> Int {
 
 ///|
 fn read_http_call_response(
-  body_size : Int,
-  num_trailers : Int,
+  body_size : Int32,
+  num_trailers : Int32,
 ) -> HttpCallResponse? raise HostError {
   let headers = get_header_map(HttpCallResponseHeaders)
   let mut status_code = 0
@@ -461,7 +497,7 @@ fn read_http_call_response(
   } else {
     []
   }
-  Some({ status_code, headers, body, trailers })
+  Some({ status_code, headers, body, trailers, })
 }
 
 ///|
@@ -477,11 +513,11 @@ fn read_http_call_response(
 pub fn dispatch_http_call(
   upstream : String,
   headers : Array[(String, String)],
-  body? : Bytes = b"",
-  trailers? : Array[(String, String)] = [],
-  timeout_ms? : Int = 5000,
+  body~ : Bytes = b"",
+  trailers~ : Array[(String, String)] = [],
+  timeout_ms~ : Int32 = 5000,
   callback : (HttpCallResponse?) -> Unit raise,
-) -> Int raise HostError {
+) -> Int32 raise HostError {
   let (st, token) = host().http_call(
     upstream,
     serialize_map(headers),
@@ -515,7 +551,10 @@ pub fn get_property_string(path : Array[String]) -> String? raise HostError {
 }
 
 ///|
-pub fn set_property(path : Array[String], value : Bytes) -> Unit raise HostError {
+pub fn set_property(
+  path : Array[String],
+  value : Bytes,
+) -> Unit raise HostError {
   check("set_property", host().set_property(serialize_path(path), value))
 }
 
@@ -523,7 +562,7 @@ pub fn set_property(path : Array[String], value : Bytes) -> Unit raise HostError
 
 ///|
 /// Value and CAS version of a shared-data key, `None` if unset.
-pub fn get_shared_data(key : String) -> (Bytes, Int)? raise HostError {
+pub fn get_shared_data(key : String) -> (Bytes, Int32)? raise HostError {
   let (st, data, cas) = host().get_shared_data(key)
   match st {
     Ok => Some((data, cas))
@@ -538,7 +577,7 @@ pub fn get_shared_data(key : String) -> (Bytes, Int)? raise HostError {
 pub fn set_shared_data(
   key : String,
   value : Bytes,
-  cas? : Int = 0,
+  cas~ : Int32 = 0,
 ) -> Unit raise HostError {
   check("set_shared_data", host().set_shared_data(key, value, cas))
 }
@@ -546,27 +585,33 @@ pub fn set_shared_data(
 // ---- shared queues ------------------------------------------------------
 
 ///|
-pub fn register_shared_queue(name : String) -> Int raise HostError {
+pub fn register_shared_queue(name : String) -> Int32 raise HostError {
   let (st, id) = host().register_shared_queue(name)
   check("register_shared_queue", st)
   id
 }
 
 ///|
-pub fn resolve_shared_queue(vm_id : String, name : String) -> Int raise HostError {
+pub fn resolve_shared_queue(
+  vm_id : String,
+  name : String,
+) -> Int32 raise HostError {
   let (st, id) = host().resolve_shared_queue(vm_id, name)
   check("resolve_shared_queue", st)
   id
 }
 
 ///|
-pub fn enqueue_shared_queue(queue_id : Int, data : Bytes) -> Unit raise HostError {
+pub fn enqueue_shared_queue(
+  queue_id : Int32,
+  data : Bytes,
+) -> Unit raise HostError {
   check("enqueue_shared_queue", host().enqueue_shared_queue(queue_id, data))
 }
 
 ///|
 /// Next item of a queue, `None` when it is empty.
-pub fn dequeue_shared_queue(queue_id : Int) -> Bytes? raise HostError {
+pub fn dequeue_shared_queue(queue_id : Int32) -> Bytes? raise HostError {
   let (st, data) = host().dequeue_shared_queue(queue_id)
   match st {
     Ok => Some(data)

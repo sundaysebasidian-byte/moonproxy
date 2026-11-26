@@ -1,0 +1,87 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "sundaysebasidian-byte/moonproxy/proxytest"
+
+import {
+  "moonbitlang/core/debug",
+  "sundaysebasidian-byte/moonproxy",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type HostEmulator
+pub fn HostEmulator::call_on_downstream_close(Self, Int32, peer? : @moonproxy.PeerType) -> Unit
+pub fn HostEmulator::call_on_downstream_data(Self, Int32, Bytes, end_of_stream? : Bool) -> @moonproxy.Action
+pub fn HostEmulator::call_on_http_call_response(Self, Int32, Array[(String, String)], Bytes, trailers? : Array[(String, String)]) -> Unit
+pub fn HostEmulator::call_on_new_connection(Self, Int32) -> @moonproxy.Action
+pub fn HostEmulator::call_on_request_body(Self, Int32, Bytes, end_of_stream? : Bool) -> @moonproxy.Action
+pub fn HostEmulator::call_on_request_headers(Self, Int32, Array[(String, String)], end_of_stream? : Bool) -> @moonproxy.Action
+pub fn HostEmulator::call_on_request_trailers(Self, Int32, Array[(String, String)]) -> @moonproxy.Action
+pub fn HostEmulator::call_on_response_body(Self, Int32, Bytes, end_of_stream? : Bool) -> @moonproxy.Action
+pub fn HostEmulator::call_on_response_headers(Self, Int32, Array[(String, String)], end_of_stream? : Bool) -> @moonproxy.Action
+pub fn HostEmulator::call_on_response_trailers(Self, Int32, Array[(String, String)]) -> @moonproxy.Action
+pub fn HostEmulator::call_on_upstream_close(Self, Int32, peer? : @moonproxy.PeerType) -> Unit
+pub fn HostEmulator::call_on_upstream_data(Self, Int32, Bytes, end_of_stream? : Bool) -> @moonproxy.Action
+pub fn HostEmulator::complete_stream(Self, Int32) -> Unit
+pub fn HostEmulator::deliver_queue_ready(Self) -> Unit
+pub fn HostEmulator::done_called(Self) -> Bool
+pub fn HostEmulator::downstream_closed(Self, Int32) -> Bool
+pub fn HostEmulator::downstream_data(Self, Int32) -> Bytes
+pub fn HostEmulator::fail_next_cas(Self, Int32) -> Unit
+pub fn HostEmulator::forwarded_request_body(Self, Int32) -> Bytes
+pub fn HostEmulator::forwarded_response_body(Self, Int32) -> Bytes
+pub fn HostEmulator::http_calls(Self) -> Array[HttpCall]
+pub fn HostEmulator::init_http(Self) -> Int32
+pub fn HostEmulator::init_tcp(Self) -> Int32
+pub fn HostEmulator::is_request_paused(Self, Int32) -> Bool
+pub fn HostEmulator::local_response(Self, Int32) -> LocalResponse?
+pub fn HostEmulator::logs(Self, level? : @moonproxy.LogLevel) -> Array[String]
+pub fn HostEmulator::metric(Self, String) -> Int64?
+pub fn HostEmulator::new(plugin_config? : Bytes, vm_config? : Bytes, clusters? : Array[String]) -> Self
+pub fn HostEmulator::request_body(Self, Int32) -> Bytes
+pub fn HostEmulator::request_headers(Self, Int32) -> Array[(String, String)]
+pub fn HostEmulator::request_resumes(Self, Int32) -> Int32
+pub fn HostEmulator::response_body(Self, Int32) -> Bytes
+pub fn HostEmulator::response_headers(Self, Int32) -> Array[(String, String)]
+pub fn HostEmulator::response_resumes(Self, Int32) -> Int32
+pub fn HostEmulator::set_log_level(Self, @moonproxy.LogLevel) -> Unit
+pub fn HostEmulator::set_property(Self, Array[String], Bytes) -> Unit
+pub fn HostEmulator::set_time_nanos(Self, Int64) -> Unit
+pub fn HostEmulator::shared_data(Self, String) -> Bytes?
+pub fn HostEmulator::shutdown(Self) -> Bool
+pub fn HostEmulator::start(Self) -> Bool
+pub fn HostEmulator::tick(Self) -> Unit
+pub fn HostEmulator::tick_period_ms(Self) -> Int32
+pub fn HostEmulator::upstream_closed(Self, Int32) -> Bool
+pub fn HostEmulator::upstream_data(Self, Int32) -> Bytes
+pub fn HostEmulator::was_reset(Self, Int32) -> Bool
+
+#derive(Eq, @debug.Debug)
+pub struct HttpCall {
+  token : Int32
+  upstream : String
+  headers : Array[(String, String)]
+  body : Bytes
+  trailers : Array[(String, String)]
+  timeout_ms : Int32
+}
+pub fn HttpCall::equal(Self, Self) -> Bool
+pub fn HttpCall::not_equal(Self, Self) -> Bool
+pub fn HttpCall::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
+pub struct LocalResponse {
+  status_code : Int32
+  headers : Array[(String, String)]
+  body : Bytes
+  details : String
+}
+pub fn LocalResponse::equal(Self, Self) -> Bool
+pub fn LocalResponse::not_equal(Self, Self) -> Bool
+pub fn LocalResponse::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits

@@ -60,12 +60,12 @@ fn mask_emails(cs : Array[Char]) -> Unit {
 }
 
 ///|
-fn digit(c : Char) -> Int {
+fn digit(c : Char) -> Int32 {
   c.to_int() - '0'.to_int()
 }
 
 ///|
-fn luhn_ok(cs : Array[Char], start : Int, end : Int) -> Bool {
+fn luhn_ok(cs : Array[Char], start : Int32, end : Int32) -> Bool {
   let mut sum = 0
   let mut double = false
   for k = end - 1; k >= start; k = k - 1 {
@@ -83,13 +83,17 @@ fn luhn_ok(cs : Array[Char], start : Int, end : Int) -> Bool {
 }
 
 ///|
-let id_weights : Array[Int] = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
+let id_weights : Array[Int32] = [
+  7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2,
+]
 
 ///|
-let id_check_chars : Array[Char] = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']
+let id_check_chars : Array[Char] = [
+  '1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2',
+]
 
 ///|
-fn resident_id_ok(cs : Array[Char], start : Int) -> Bool {
+fn resident_id_ok(cs : Array[Char], start : Int32) -> Bool {
   let mut sum = 0
   for k in 0..<17 {
     sum += digit(cs[start + k]) * id_weights[k]
@@ -104,7 +108,8 @@ fn mask_numbers(cs : Array[Char]) -> Unit {
   let n = cs.length()
   let mut i = 0
   while i < n {
-    if !cs[i].is_ascii_digit() || (i > 0 && (cs[i - 1].is_ascii_alphabetic() || cs[i - 1].is_ascii_digit())) {
+    if !cs[i].is_ascii_digit() ||
+      (i > 0 && (cs[i - 1].is_ascii_alphabetic() || cs[i - 1].is_ascii_digit())) {
       i += 1
       continue
     }
@@ -132,7 +137,12 @@ fn mask_numbers(cs : Array[Char]) -> Unit {
         cs[k] = '*'
       }
     } else if (len == 18 && resident_id_ok(cs, i)) ||
-      (len >= 13 && len <= 19 && cs[j - 1].is_ascii_digit() && luhn_ok(cs, i, j)) {
+      (
+        len >= 13 &&
+        len <= 19 &&
+        cs[j - 1].is_ascii_digit() &&
+        luhn_ok(cs, i, j)
+      ) {
       for k in i..<(j - 4) {
         cs[k] = '*'
       }
