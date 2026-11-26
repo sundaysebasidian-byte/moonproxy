@@ -37,3 +37,13 @@
 | SDK：`increment(0)` 调用宿主 | Envoy 对 0 返回 `BadArgument`，插件报错 | 模拟宿主改为与 Envoy 一致地拒绝 0；SDK 对 0 直接返回 |
 | SDK：root 拒绝创建流后，每个回调都再问一次 | 多余调用，且插件可能有副作用 | 单测 “a root that declines a stream is asked only once” |
 | FFI：`malloc` 没按参考实现多分配 4 字节，out 参数槽未清零 | 只能在 wasm 里出现的内存问题，Envoy e2e 未必能稳定复现 | `scripts/ffi_test.cjs` 用 JS 宿主直接驱动编译后的模块，含 2 万次请求的内存不增长检查 |
+| pii_mask：只认连续数字 | `138 0013 8000`、`138-0013-8000`、`+86 138…`、分组银行卡号和 15 位旧身份证原样通过 | 单测 “grouped and prefixed numbers”、“old 15-digit ids and the mobile prefix” |
+| pii_mask：客户端带 `range` | 上游只回一段，插件看到的数字被截断在块边界上，脱敏规则匹配不上 | 单测 “accept-encoding and range are stripped so the upstream sends the whole body in plain text”；e2e 检查上游收不到 `range` |
+| pii_mask：没有 `content-type` 的响应被当成二进制跳过 | 上游漏写类型就能绕过脱敏 | 单测 “a body without content-type is still masked”；e2e `/pii-untyped` |
+| pii_mask：`text/event-stream` 等到流结束才放行 | LLM 流式回复被整段缓冲，客户端拿不到流 | 单测 “server-sent events stream event by event, masked”；e2e 检查第一条事件在上游暂停前就到达客户端 |
+| ai_guard：`.`、`..`、`\`、`;参数` 没有规范化 | `/v1/chat/completions/x/..` 等路径绕过检查 | 白盒测试补充点段和反斜杠用例；e2e 两条点段路径必须被拒 |
+| ai_guard：不限制 `n` / `best_of` | 一次请求拿到多份补全，`max_tokens` 上限被放大 | 单测 “n and best_of are limited to max_choices” |
+| rate_limit：桶号是不带种子的 FNV-1a | 客户端能离线挑出落在别人桶里的 key | 白盒 “the hash seed moves clients between buckets”；种子写进 shared data，所有 worker 共用 |
+| rate_limit：IPv6 按完整地址区分 | 一个 /64 内换地址就拿到新桶 | 白盒 “IPv6 clients are grouped by /64” |
+| tcp_quota：关闭后暂停的数据恢复时被重复计数；`max_bytes` 写成小数或负数被接受 | 统计偏大；配置错误不报 | 单测 “invalid configuration stops the plugin” 及关闭后计数的检查 |
+| 模拟宿主：直接回复之后请求 body 仍交给插件和上游 | 与 Envoy 不一致，被拒请求的 body 在单测里像是被转发了 | 单测 “request data after a local response reaches neither the plugin nor the upstream” |

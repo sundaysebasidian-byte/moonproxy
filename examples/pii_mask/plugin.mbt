@@ -43,7 +43,7 @@ impl @moonproxy.RootContext for MaskRoot with fn error_policy(_) {
 
 ///|
 impl @moonproxy.RootContext for MaskRoot with fn new_http_context(self, _) {
-  Some(MaskStream::{ root: self, active: false, events: false })
+  Some(MaskStream::{ root: self, active: false, events: false, })
 }
 
 ///|
@@ -74,8 +74,10 @@ fn is_binary(content_type : String) -> Bool {
 fn events_end(body : Bytes) -> Int32 {
   for k = body.length() - 1; k >= 1; k = k - 1 {
     if body[k] == b'\n' &&
-      (body[k - 1] == b'\n' ||
-      (k >= 3 && body[k - 1] == b'\r' && body[k - 2] == b'\n')) {
+      (
+        body[k - 1] == b'\n' ||
+        (k >= 3 && body[k - 1] == b'\r' && body[k - 2] == b'\n')
+      ) {
       return k + 1
     }
   }

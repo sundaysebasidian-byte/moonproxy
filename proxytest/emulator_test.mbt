@@ -802,7 +802,10 @@ test "request data after a local response reaches neither the plugin nor the ups
   })
   let id = emu.init_http()
   let _ = emu.call_on_request_headers(id, [(":path", "/")])
-  inspect(emu.local_response(id).map(fn(r) { r.status_code }) is Some(403), content="true")
+  inspect(
+    emu.local_response(id).map(fn(r) { r.status_code }) is Some(403),
+    content="true",
+  )
   debug_inspect(emu.call_on_request_body(id, b"secret"), content="Pause")
   debug_inspect(emu.call_on_request_trailers(id, [("x", "1")]), content="Pause")
   inspect(bodies.val, content="0")

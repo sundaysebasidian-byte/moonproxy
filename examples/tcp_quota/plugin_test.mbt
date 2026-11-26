@@ -43,7 +43,10 @@ test "a connection over its quota is closed both ways" {
 
 ///|
 test "invalid configuration stops the plugin" {
-  for cfg in ["{max_bytes", "{\"max_bytes\":\"1048576\"}", "{\"max_bytes\":-1}", "{\"max_bytes\":1.5}"] {
+  for
+    cfg in [
+      "{max_bytes", "{\"max_bytes\":\"1048576\"}", "{\"max_bytes\":-1}", "{\"max_bytes\":1.5}",
+    ] {
     let emu = @proxytest.HostEmulator::new(plugin_config=@utf8.encode(cfg))
     inspect(emu.start(), content="false")
   }

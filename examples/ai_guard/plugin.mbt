@@ -151,7 +151,9 @@ fn normalize_path(raw : String) -> String {
     }
     match s {
       "" | "." => ()
-      ".." => { let _ = segments.pop() }
+      ".." => {
+        let _ = segments.pop()
+      }
       _ => segments.push(s)
     }
   }

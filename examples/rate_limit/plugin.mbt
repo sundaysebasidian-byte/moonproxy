@@ -134,7 +134,11 @@ fn ipv6_groups(addr : String) -> Array[String]? {
     }
     _ => return None
   }
-  if groups.length() == 8 { Some(groups) } else { None }
+  if groups.length() == 8 {
+    Some(groups)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -239,7 +243,7 @@ impl @moonproxy.RootContext for LimitRoot with fn on_plugin_start(self, _) {
     { "hash_seed": String(h), .. } if h != "" => (h, true)
     _ => (shared_seed(), false)
   }
-  self.limits = { rate: r, burst, key_header, buckets, seed }
+  self.limits = { rate: r, burst, key_header, buckets, seed, }
   self.seed_confirmed = confirmed
   self.allowed = Some(@moonproxy.Metric::counter("rate_limit.allowed"))
   self.limited = Some(@moonproxy.Metric::counter("rate_limit.limited"))
@@ -374,7 +378,7 @@ impl @moonproxy.HttpContext for LimitStream with fn on_request_headers(
   let root = self.root
   if !root.seed_confirmed {
     root.seed_confirmed = true
-    root.limits = { ..root.limits, seed: shared_seed() }
+    root.limits = { ..root.limits, seed: shared_seed(), }
   }
   let client = match root.limits.key_header {
     Some(h) => "h:" + @moonproxy.get_request_header(h).unwrap_or("")

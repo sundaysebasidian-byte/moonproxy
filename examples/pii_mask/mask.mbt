@@ -91,7 +91,12 @@ fn resident_id_ok(cs : Array[Char], start : Int32) -> Bool {
 }
 
 ///|
-fn mask_range(cs : Array[Char], pos : Array[Int32], from : Int32, to : Int32) -> Unit {
+fn mask_range(
+  cs : Array[Char],
+  pos : Array[Int32],
+  from : Int32,
+  to : Int32,
+) -> Unit {
   for k in from..<to {
     cs[pos[k]] = '*'
   }
@@ -214,7 +219,10 @@ fn mask_numbers(cs : Array[Char]) -> Unit {
       }
     }
     // Resident ID: 17 digits + check character X.
-    if groups.length() == 1 && pos.length() == 17 && j < n && (cs[j] == 'X' || cs[j] == 'x') {
+    if groups.length() == 1 &&
+      pos.length() == 17 &&
+      j < n &&
+      (cs[j] == 'X' || cs[j] == 'x') {
       pos.push(j)
       j += 1
     }

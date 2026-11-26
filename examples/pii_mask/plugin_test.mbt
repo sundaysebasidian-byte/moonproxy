@@ -128,17 +128,9 @@ test "server-sent events stream event by event, masked" {
   )
   // A number split across chunks inside one event is held until the event
   // is complete.
-  let b = emu.call_on_response_body(
-    id,
-    b"data: 139123",
-    end_of_stream=false,
-  )
+  let b = emu.call_on_response_body(id, b"data: 139123", end_of_stream=false)
   debug_inspect(b, content="Pause")
-  let c = emu.call_on_response_body(
-    id,
-    b"45678\r\n\r\n",
-    end_of_stream=false,
-  )
+  let c = emu.call_on_response_body(id, b"45678\r\n\r\n", end_of_stream=false)
   debug_inspect(c, content="Continue")
   let _ = emu.call_on_response_body(id, b"data: end", end_of_stream=true)
   inspect(

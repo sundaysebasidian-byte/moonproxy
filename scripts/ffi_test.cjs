@@ -309,7 +309,10 @@ function testRateLimit() {
   check('rate_limit: burst then 429 through shared data and CAS', JSON.stringify(got) === '[0,0,0,1]', got);
   check('rate_limit: 429 has retry-after',
     h.local && h.local.code === 429 && h.local.headers.some(([k]) => k === 'retry-after'), h.local);
-  check('rate_limit: one bucket written', h.shared.size === 1, [...h.shared.keys()]);
+  const keys = [...h.shared.keys()];
+  check('rate_limit: one bucket written, plus the shared hash seed',
+    keys.length === 2 && keys.includes('rate_limit.seed') &&
+      keys.filter((k) => k.startsWith('rate_limit:')).length === 1, keys);
   flat('rate_limit', h, () => request());
 }
 

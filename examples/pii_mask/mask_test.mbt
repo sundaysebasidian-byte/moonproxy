@@ -84,9 +84,15 @@ test "grouped and prefixed numbers" {
 
 ///|
 test "old 15-digit ids and the mobile prefix" {
-  inspect(@pii_mask.mask_pii("id 110105491231002"), content="id ***********1002")
+  inspect(
+    @pii_mask.mask_pii("id 110105491231002"),
+    content="id ***********1002",
+  )
   // Month 13 is not a date.
   inspect(@pii_mask.mask_pii("n 110105491331002"), content="n 110105491331002")
   // 11 digits starting with 10, 11 or 12 are not mobile numbers.
-  inspect(@pii_mask.mask_pii("12345678901 10012345678"), content="12345678901 10012345678")
+  inspect(
+    @pii_mask.mask_pii("12345678901 10012345678"),
+    content="12345678901 10012345678",
+  )
 }

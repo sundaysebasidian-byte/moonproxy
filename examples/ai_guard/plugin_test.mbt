@@ -171,9 +171,7 @@ test "token limits must be numbers; null or none gets the cap" {
 
 ///|
 test "n and best_of are limited to max_choices" {
-  let (emu, id) = send(
-    "{\"model\":\"gpt-4o-mini\",\"n\":128,\"messages\":[]}",
-  )
+  let (emu, id) = send("{\"model\":\"gpt-4o-mini\",\"n\":128,\"messages\":[]}")
   guard emu.local_response(id) is Some(r) else { fail("accepted n=128") }
   inspect(r.details, content="ai_guard_policy_violation")
   for bad in ["0", "1.5", "\"2\""] {
