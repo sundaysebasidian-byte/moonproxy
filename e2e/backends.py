@@ -1,7 +1,9 @@
 """Loopback backends used by the Envoy end-to-end test and the benchmark.
 
 - 8081 echo: answers JSON describing the request it received
-  (`/pii` streams a body with personal data in two chunks instead;
+  (`/pii` streams a body with personal data in two chunks instead,
+  `/pii-untyped` sends one without `content-type`, `/sse` sends
+  server-sent events with a pause after the first one;
   `/__seen` lists every request received so far);
 - 8082 auth: `/check` allows `authorization: Bearer good` (200 with
   `x-user-id: u-1`), denies anything else with 403;
@@ -32,6 +34,20 @@ class Echo(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _chunked(self, ctype, parts, pause):
+        self.send_response(200)
+        if ctype:
+            self.send_header("content-type", ctype)
+        self.send_header("transfer-encoding", "chunked")
+        self.end_headers()
+        for i, part in enumerate(parts):
+            raw = part.encode()
+            self.wfile.write(b"%x\r\n%s\r\n" % (len(raw), raw))
+            self.wfile.flush()
+            if i == 0:
+                time.sleep(pause)
+        self.wfile.write(b"0\r\n\r\n")
+
     def _read_body(self):
         if "chunked" in (self.headers.get("transfer-encoding") or "").lower():
             raw = b""
@@ -59,16 +75,16 @@ class Echo(BaseHTTPRequestHandler):
             return
         if self.path == "/pii":
             # Chunked on purpose: the phone number straddles two chunks.
-            self.send_response(200)
-            self.send_header("content-type", "application/json")
-            self.send_header("transfer-encoding", "chunked")
-            self.end_headers()
-            for part in ('{"user":"alice@example.com","tel":"138123', '45678"}'):
-                raw = part.encode()
-                self.wfile.write(b"%x\r\n%s\r\n" % (len(raw), raw))
-                self.wfile.flush()
-                time.sleep(0.05)
-            self.wfile.write(b"0\r\n\r\n")
+            self._chunked("application/json",
+                          ['{"user":"alice@example.com","tel":"138123', '45678"}'], 0.05)
+            return
+        if self.path == "/pii-untyped":
+            self._chunked(None, ['{"tel":"13812345678"}'], 0)
+            return
+        if self.path == "/sse":
+            # One complete event, a pause, then an event split mid-number.
+            self._chunked("text/event-stream",
+                          ["data: 13812345678\n\n", "data: 139123", "45678\n\n"], 1.5)
             return
         if self.path == "/hello":
             self._send(200, "hello", "text/plain")

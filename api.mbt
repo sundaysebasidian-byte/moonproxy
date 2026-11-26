@@ -95,10 +95,13 @@ pub fn get_vm_configuration() -> Bytes raise HostError {
 ///|
 /// Raw bytes of the plugin `configuration` field (empty when none is set).
 ///
-/// Envoy hands the plugin configuration out only while `on_plugin_start`
-/// runs; anywhere else this raises `HostError(_, NotFound)` instead of
-/// quietly returning an empty configuration. Parse it in `on_plugin_start`
-/// and keep the result.
+/// Envoy hands the plugin configuration out only while the plugin is being
+/// configured or started; anywhere else this raises
+/// `HostError(_, NotFound)` instead of quietly returning an empty
+/// configuration. moonproxy serves it only in `on_plugin_start` (slightly
+/// stricter than Envoy, which also serves it during `on_vm_start`), so that
+/// plugins behave the same on every host. Parse it there and keep the
+/// result.
 pub fn get_plugin_configuration() -> Bytes raise HostError {
   if !configuring.val {
     raise HostError("get_plugin_configuration", NotFound)

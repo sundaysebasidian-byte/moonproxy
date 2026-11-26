@@ -455,6 +455,16 @@ fn concat(a : Bytes, b : Bytes) -> Bytes {
 }
 
 ///|
+/// Once a local response has been sent or the stream was reset, Envoy
+/// aborts the request side of the filter chain: later request data and
+/// trailers reach neither the plugin nor the upstream.
+fn Stream::request_ended(self : Stream) -> Bool {
+  self.reset || (self.local_response is Some(_) && !self.local_pending)
+}
+
+///|
+/// Deliver a request body chunk. After a local response or a reset the
+/// chunk is dropped and `Pause` returned (see `Stream::request_ended`).
 pub fn HostEmulator::call_on_request_body(
   self : HostEmulator,
   id : Int32,
@@ -462,6 +472,9 @@ pub fn HostEmulator::call_on_request_body(
   end_of_stream~ : Bool = true,
 ) -> @moonproxy.Action {
   let s = self.stream(id)
+  if s.request_ended() {
+    return Pause
+  }
   if s.req_stop_all {
     s.held_req.push(Data(chunk, end_of_stream))
     return Pause
@@ -487,6 +500,9 @@ pub fn HostEmulator::call_on_request_trailers(
   trailers : Array[(String, String)],
 ) -> @moonproxy.Action {
   let s = self.stream(id)
+  if s.request_ended() {
+    return Pause
+  }
   if s.req_stop_all {
     s.held_req.push(Trailers(trailers))
     return Pause

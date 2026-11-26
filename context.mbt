@@ -35,8 +35,10 @@ pub(all) enum ErrorPolicy {
   /// Let the request or connection continue as if the callback had
   /// returned `Continue` (a paused request is resumed).
   FailOpen
-  /// Reject: an HTTP stream gets a local 500 response, a TCP connection
-  /// is closed.
+  /// Reject: while the request is being processed an HTTP stream gets a
+  /// local 500 response; once the upstream response has started (or if
+  /// the local response is refused) the stream is reset instead. A TCP
+  /// connection is closed.
   FailClosed
 }
 

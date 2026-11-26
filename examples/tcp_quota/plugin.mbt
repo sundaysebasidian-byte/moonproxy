@@ -1,7 +1,8 @@
 ///|
 /// TCP (L4) filter: per-connection byte accounting with a quota.
 ///
-/// Configuration: `{"max_bytes": 1048576}` (0 or missing means no limit).
+/// Configuration: `{"max_bytes": 1048576}` (0 or missing means no limit;
+/// anything but a whole number makes the plugin fail to start).
 ///
 /// Bytes in each direction go to the counters `tcp_quota.rx_bytes` and
 /// `tcp_quota.tx_bytes`. A connection that moves more than `max_bytes`
@@ -27,8 +28,16 @@ impl @moonproxy.RootContext for QuotaRoot with fn on_plugin_start(self, _) {
         return false
       }
     }
-    if cfg is { "max_bytes": Number(n, ..), .. } && n > 0.0 {
-      self.max_bytes = n.to_int64()
+    match cfg {
+      { "max_bytes": Number(n, ..), .. } if n >= 0.0 && n == n.floor() =>
+        self.max_bytes = n.to_int64()
+      { "max_bytes": _, .. } => {
+        // A typo such as "1048576" (a string) must not silently mean
+        // "no limit".
+        @moonproxy.log_error("tcp_quota: max_bytes must be a whole number >= 0")
+        return false
+      }
+      _ => ()
     }
   }
   self.rx = Some(@moonproxy.Metric::counter("tcp_quota.rx_bytes"))
@@ -59,10 +68,6 @@ fn Conn::account(
   if metric is Some(m) {
     m.increment(delta=size.to_int64())
   }
-  if self.cut {
-    // Closing takes effect asynchronously; relay nothing more meanwhile.
-    return Pause
-  }
   let limit = self.root.max_bytes
   if limit > 0L && self.rx + self.tx > limit {
     self.cut = true
@@ -81,12 +86,21 @@ fn Conn::account(
 
 ///|
 impl @moonproxy.TcpContext for Conn with fn on_downstream_data(self, size, _) {
+  // After a cut, closing takes effect asynchronously: relay nothing more.
+  // The host keeps the paused data and reports it again with each new
+  // chunk, so it is not counted again either.
+  if self.cut {
+    return Pause
+  }
   self.rx += size.to_int64()
   self.account(size, self.root.rx)
 }
 
 ///|
 impl @moonproxy.TcpContext for Conn with fn on_upstream_data(self, size, _) {
+  if self.cut {
+    return Pause
+  }
   self.tx += size.to_int64()
   self.account(size, self.root.tx)
 }

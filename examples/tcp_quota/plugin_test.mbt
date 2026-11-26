@@ -36,10 +36,15 @@ test "a connection over its quota is closed both ways" {
   inspect(emu.downstream_closed(id), content="true")
   inspect(emu.upstream_closed(id), content="true")
   debug_inspect(emu.metric("tcp_quota.closed"), content="Some(1)")
+  // Data that arrives before the close lands is held, and not counted again.
+  inspect(emu.call_on_upstream_data(id, b"ef"), content="Pause")
+  debug_inspect(emu.metric("tcp_quota.tx_bytes"), content="Some(4)")
 }
 
 ///|
 test "invalid configuration stops the plugin" {
-  let emu = @proxytest.HostEmulator::new(plugin_config=b"{max_bytes")
-  inspect(emu.start(), content="false")
+  for cfg in ["{max_bytes", "{\"max_bytes\":\"1048576\"}", "{\"max_bytes\":-1}", "{\"max_bytes\":1.5}"] {
+    let emu = @proxytest.HostEmulator::new(plugin_config=@utf8.encode(cfg))
+    inspect(emu.start(), content="false")
+  }
 }

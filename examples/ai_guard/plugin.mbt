@@ -7,14 +7,18 @@
 ///   "allowed_models": ["gpt-4o-mini", "qwen-plus"],
 ///   "deny_words": ["internal-only", "password"],
 ///   "max_tokens": 1024,
+///   "max_choices": 1,
 ///   "paths": ["/chat/completions", "/completions", "/responses"]
 /// }
 /// ```
 ///
 /// A `POST` whose path ends with one of `paths` (the default list above) is
 /// checked. The path is normalised first (query dropped, `%XX` decoded,
-/// `;params` and repeated or trailing `/` removed, lower-cased), so
-/// `/v1/Chat//complet%69ons/` is checked too. The headers continue at once,
+/// `\` read as `/`, `;params`, `.` and `..` segments and repeated or
+/// trailing `/` resolved, lower-cased), so `/v1/Chat//complet%69ons/` and
+/// `/v1/chat/completions/x/..` are checked too. Turning on Envoy's own
+/// `normalize_path` and `merge_slashes` in the HTTP connection manager is
+/// still recommended, so that the backend routes on the same path. The headers continue at once,
 /// without `content-length` (the body may be rewritten; Envoy then frames it
 /// itself). The body is buffered to the end of the stream, so none of it
 /// reaches the upstream before the verdict:
@@ -22,6 +26,8 @@
 /// - `model` not in `allowed_models` (when the list is non-empty), or a
 ///   deny word (case-insensitive) in `messages`, `prompt` or `input`: 400
 ///   `policy_violation`, with the reason, before any token is spent;
+/// - `n` or `best_of` above `max_choices` (default 1): 400
+///   `policy_violation`; not a positive integer: 400 `invalid_request`;
 /// - a token limit (`max_tokens`, `max_completion_tokens`,
 ///   `max_output_tokens`) that is not a positive number: 400
 ///   `invalid_request`, since a backend may read a string such as `"99999"`
@@ -45,6 +51,7 @@ priv struct Policy {
   allowed_models : Array[String]
   deny_words : Array[String]
   max_tokens : Int32
+  max_choices : Int32
   paths : Array[String]
 }
 
@@ -72,8 +79,14 @@ fn parse_policy(text : String) -> Policy? {
   } else {
     4096
   }
+  let max_choices = if o.get("max_choices") is Some(Number(n, ..)) && n >= 1.0 {
+    n.to_int()
+  } else {
+    1
+  }
   let paths = list("paths", true).map(normalize_path)
   Some({
+    max_choices,
     allowed_models: list("allowed_models", false),
     deny_words: list("deny_words", true),
     max_tokens,
@@ -118,28 +131,31 @@ fn normalize_path(raw : String) -> String {
         hex_value(chars[i + 2]) is Some(l) {
         let v = h * 16 + l
         if v < 128 {
-          out.write_char(Int32::unsafe_to_char(v))
+          out.write_char(if v == 0x5c { '/' } else { Int32::unsafe_to_char(v) })
           i += 3
           continue
         }
       }
     }
-    out.write_char(c)
+    out.write_char(if c == '\\' { '/' } else { c })
     i += 1
   }
-  // `;params` are dropped per segment, as servlet-style backends do.
-  let segments = out
-    .to_string()
-    .to_lower()
-    .split("/")
-    .map(fn(s) {
-      match s.find(";") {
-        Some(i) => s[:i].to_owned()
-        None => s.to_owned()
-      }
-    })
-    .filter(fn(s) { s != "" })
-  "/" + segments.collect().join("/")
+  // `;params` are dropped per segment, as servlet-style backends do; `\`
+  // counts as `/` and `.` / `..` segments are resolved (RFC 3986
+  // remove_dot_segments), as most HTTP servers do before routing.
+  let segments : Array[String] = []
+  for seg in out.to_string().to_lower().split("/") {
+    let s = match seg.find(";") {
+      Some(i) => seg[:i].to_owned()
+      None => seg.to_owned()
+    }
+    match s {
+      "" | "." => ()
+      ".." => { let _ = segments.pop() }
+      _ => segments.push(s)
+    }
+  }
+  "/" + segments.join("/")
 }
 
 ///|
@@ -214,6 +230,24 @@ fn evaluate(
           reason="prompt contains a blocked term",
         )
       }
+    }
+  }
+  // `n` / `best_of` multiply the tokens a request can spend.
+  for key in ["n", "best_of"] {
+    match o.get(key) {
+      None | Some(Null) => ()
+      Some(Number(n, ..)) if n >= 1.0 && n == n.floor() =>
+        if n > policy.max_choices.to_double() {
+          return Reject(
+            kind="policy_violation",
+            reason="\"\{key}\" above \{policy.max_choices}",
+          )
+        }
+      Some(_) =>
+        return Reject(
+          kind="invalid_request",
+          reason="\"\{key}\" must be a positive integer",
+        )
     }
   }
   let cap = policy.max_tokens.to_double()

@@ -74,7 +74,7 @@ test "grpc responses are not treated as text" {
 }
 
 ///|
-test "accept-encoding is stripped so the upstream answers in plain text" {
+test "accept-encoding and range are stripped so the upstream sends the whole body in plain text" {
   let emu = @proxytest.HostEmulator::new()
   assert_true(emu.start()) catch {
     _ => abort("start")
@@ -83,6 +83,8 @@ test "accept-encoding is stripped so the upstream answers in plain text" {
   let _ = emu.call_on_request_headers(id, [
     (":path", "/"),
     ("accept-encoding", "gzip, br"),
+    ("range", "bytes=0-9"),
+    ("if-range", "\"v1\""),
   ])
   debug_inspect(emu.request_headers(id), content="[(\":path\", \"/\")]")
 }
@@ -94,4 +96,53 @@ test "invalid UTF-8 around PII keeps every byte and the length" {
   let out = emu.response_body(id)
   inspect(out.length() == body.length(), content="true")
   inspect(out, content="b\"\\xff\\xfe tel 138****5678 \\xc3\"")
+}
+
+///|
+test "a body without content-type is still masked" {
+  let (emu, id) = run([], [b"{\"tel\":\"13812345678\"}"])
+  inspect(
+    @utf8.decode_lossy(emu.response_body(id)),
+    content="{\"tel\":\"138****5678\"}",
+  )
+}
+
+///|
+test "server-sent events stream event by event, masked" {
+  let emu = @proxytest.HostEmulator::new()
+  assert_true(emu.start())
+  let id = emu.init_http()
+  let _ = emu.call_on_response_headers(id, [
+    ("content-type", "text/event-stream"),
+  ])
+  // A complete event goes out at once.
+  let a = emu.call_on_response_body(
+    id,
+    b"data: call 13812345678\n\n",
+    end_of_stream=false,
+  )
+  debug_inspect(a, content="Continue")
+  inspect(
+    @utf8.decode_lossy(emu.forwarded_response_body(id)),
+    content="data: call 138****5678\n\n",
+  )
+  // A number split across chunks inside one event is held until the event
+  // is complete.
+  let b = emu.call_on_response_body(
+    id,
+    b"data: 139123",
+    end_of_stream=false,
+  )
+  debug_inspect(b, content="Pause")
+  let c = emu.call_on_response_body(
+    id,
+    b"45678\r\n\r\n",
+    end_of_stream=false,
+  )
+  debug_inspect(c, content="Continue")
+  let _ = emu.call_on_response_body(id, b"data: end", end_of_stream=true)
+  inspect(
+    @utf8.decode_lossy(emu.forwarded_response_body(id)),
+    content="data: call 138****5678\n\ndata: 139****5678\r\n\r\ndata: end",
+  )
 }

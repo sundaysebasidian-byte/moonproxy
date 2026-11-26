@@ -782,3 +782,29 @@ fn opt(o : String?) -> String {
     None => "None"
   }
 }
+
+///|
+test "request data after a local response reaches neither the plugin nor the upstream" {
+  let bodies = Ref(0)
+  let emu = install(fn(_) {
+    Fn::new(
+      req_headers=fn() {
+        @moonproxy.send_http_response(403, [], b"no") catch {
+          _ => ()
+        }
+        Pause
+      },
+      req_body=fn(_, _) {
+        bodies.val += 1
+        Continue
+      },
+    )
+  })
+  let id = emu.init_http()
+  let _ = emu.call_on_request_headers(id, [(":path", "/")])
+  inspect(emu.local_response(id).map(fn(r) { r.status_code }) is Some(403), content="true")
+  debug_inspect(emu.call_on_request_body(id, b"secret"), content="Pause")
+  debug_inspect(emu.call_on_request_trailers(id, [("x", "1")]), content="Pause")
+  inspect(bodies.val, content="0")
+  inspect(emu.forwarded_request_body(id).length(), content="0")
+}

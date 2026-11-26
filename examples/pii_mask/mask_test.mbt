@@ -59,3 +59,34 @@ test "masking never changes the UTF-8 length" {
     assert_eq(@utf8.encode(m).length(), @utf8.encode(s).length())
   }
 }
+
+///|
+test "grouped and prefixed numbers" {
+  inspect(
+    @pii_mask.mask_pii("a 138 1234 5678 b 138-1234-5678 c +86 138 1234 5678"),
+    content="a 138 **** 5678 b 138-****-5678 c +86 138 **** 5678",
+  )
+  inspect(
+    @pii_mask.mask_pii("card 6222 0212 3456 7890 128 / 4111-1111-1111-1111"),
+    content="card **** **** **** ***0 128 / ****-****-****-1111",
+  )
+  // Two phone numbers separated by a space are masked one by one.
+  inspect(
+    @pii_mask.mask_pii("13812345678 13912345678"),
+    content="138****5678 139****5678",
+  )
+  // Mixed separators and odd groupings are not one number.
+  inspect(
+    @pii_mask.mask_pii("138 1234-5678 1381 234 5678"),
+    content="138 1234-5678 1381 234 5678",
+  )
+}
+
+///|
+test "old 15-digit ids and the mobile prefix" {
+  inspect(@pii_mask.mask_pii("id 110105491231002"), content="id ***********1002")
+  // Month 13 is not a date.
+  inspect(@pii_mask.mask_pii("n 110105491331002"), content="n 110105491331002")
+  // 11 digits starting with 10, 11 or 12 are not mobile numbers.
+  inspect(@pii_mask.mask_pii("12345678901 10012345678"), content="12345678901 10012345678")
+}

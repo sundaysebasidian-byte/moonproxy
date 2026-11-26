@@ -6,6 +6,7 @@ Usage: python3 e2e/run.py <dir with <plugin>.wasm files> [--image IMAGE]
 """
 import argparse
 import concurrent.futures
+import http.client
 import json
 import os
 import socket
@@ -127,9 +128,25 @@ def test_pii_mask():
     status, _, body = request(port, "/pii")
     check("pii_mask: chunked response masked",
           status == 200 and body == b'{"user":"a****@example.com","tel":"138****5678"}', body)
-    status, _, body = request(port, "/x", headers={"accept-encoding": "gzip"})
+    status, _, body = request(port, "/x", headers={"accept-encoding": "gzip", "range": "bytes=0-9"})
     seen = json.loads(body)["headers"] if status == 200 else {}
-    check("pii_mask: upstream never asked for compression", status == 200 and "accept-encoding" not in seen, seen)
+    check("pii_mask: upstream never asked for compression or a byte range",
+          status == 200 and "accept-encoding" not in seen and "range" not in seen, seen)
+    status, _, body = request(port, "/pii-untyped")
+    check("pii_mask: body without content-type masked", body == b'{"tel":"138****5678"}', (status, body))
+    # Server-sent events: the first event must arrive (masked) while the
+    # backend is still pausing, i.e. it is not held until the stream ends.
+    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+    conn.request("GET", "/sse")
+    resp = conn.getresponse()
+    t0 = time.time()
+    first = resp.readline()
+    early = time.time() - t0 < 1.0
+    rest = resp.read()
+    conn.close()
+    check("pii_mask: server-sent events stream masked, event by event",
+          early and first + rest == b"data: 138****5678\n\ndata: 139****5678\n\n",
+          (early, first + rest))
 
 
 def test_ext_authz():
@@ -195,9 +212,10 @@ def test_ai_guard():
     status, _, body = request(port, "/v1/chat/completions", "POST", hdrs, json.dumps(req).encode())
     check("ai_guard: disallowed model is 400", status == 400 and b"policy_violation" in body, (status, body))
     # Path tricks and other LLM endpoints must not skip the check.
-    for path in ("/v1/Chat//complet%69ons/", "/v1/responses"):
+    for path in ("/v1/Chat//complet%69ons/", "/v1/chat/completions/x/..", "/v1/chat/completions/.",
+                 "/v1/responses"):
         status, _, body = request(port, path, "POST", hdrs, json.dumps(req).encode())
-        check(f"ai_guard: {path} is checked", status == 400, (status, body))
+        check(f"ai_guard: {path} is checked", status == 400 and b"policy_violation" in body, (status, body))
 
 
 def test_tcp_quota():
