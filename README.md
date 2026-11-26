@@ -82,7 +82,7 @@ import {
 然后生成 ABI 导出（`exports.mbt`，以及 `moon.pkg` 里 `options(link: ...)` 的 wasm 导出列表；`moon.pkg` 里其他内容会保留）。脚本只依赖 Python 3 标准库，从本仓库复制一份即可：
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/sundaysebasidian-byte/moonproxy/v0.1.0/scripts/gen_exports.py
+curl -fsSLO https://raw.githubusercontent.com/sundaysebasidian-byte/moonproxy/cdff5c1124a4642527de7d208a80ee82c278a760/scripts/gen_exports.py
 python3 gen_exports.py path/to/your_plugin
 ```
 
