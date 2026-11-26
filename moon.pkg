@@ -1,0 +1,12 @@
+import {
+  "moonbitlang/core/encoding/utf8",
+}
+
+warnings = "-invalid_inline_wasm"
+
+options(
+  targets: {
+    "host_wasm.mbt": [ "wasm" ],
+    "host_stub.mbt": [ "not", "wasm" ],
+  },
+)
