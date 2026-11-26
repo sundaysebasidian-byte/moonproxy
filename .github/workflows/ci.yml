@@ -39,10 +39,10 @@ jobs:
         if: matrix.sdk == 'pinned'
         run: |
           python3 scripts/gen_exports.py --check
-          moon fmt --check
+          moon fmt
           moon info
           git add -A -N
-          git diff --exit-code
+          git diff --no-color --exit-code
 
   wasm:
     name: build plugins and check the ABI (moon ${{ matrix.sdk }})

@@ -42,6 +42,7 @@ def wrk(port):
 def main():
     moon_wasm, rust_wasm = (os.path.abspath(p) for p in sys.argv[1:3])
     work = tempfile.mkdtemp()
+    os.chmod(work, 0o755)  # the envoy user in the container must read the config
     for src, dst in ((moon_wasm, "moonproxy.wasm"), (rust_wasm, "rust.wasm")):
         with open(src, "rb") as a, open(os.path.join(work, dst), "wb") as b:
             b.write(a.read())
@@ -55,11 +56,12 @@ def main():
         ["docker", "run", "--rm", "--name", "moonproxy-bench", "--network", "host",
          "-v", f"{work}:/w:ro", IMAGE, "envoy", "-c", "/w/envoy.json", "--concurrency", "2",
          "--component-log-level", "wasm:warn"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        stdout=subprocess.DEVNULL, stderr=open(os.path.join(work, "envoy.log"), "w"))
     results = {name: [] for name, _, _ in cases}
     try:
         if not wait_ready():
-            sys.exit("envoy did not start")
+            subprocess.run(["docker", "stop", "-t", "2", "moonproxy-bench"], capture_output=True)
+            sys.exit("envoy did not start:\n" + open(os.path.join(work, "envoy.log")).read()[-3000:])
         for name, port, _ in cases:
             subprocess.run(["wrk", "-t2", "-c8", "-d3s", f"http://127.0.0.1:{port}/hello"],
                            capture_output=True, check=True)  # warm up JIT and connections
