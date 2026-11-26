@@ -1,0 +1,42 @@
+import {
+  "sundaysebasidian-byte/moonproxy" @moonproxy,
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/json",
+  "moonbitlang/core/strconv",
+}
+
+import {
+  "sundaysebasidian-byte/moonproxy/proxytest" @proxytest,
+} for "test"
+
+options(
+  link: {
+    "wasm": {
+      "exports": [
+        "proxy_abi_version_0_2_1",
+        "proxy_on_memory_allocate",
+        "proxy_on_context_create",
+        "proxy_on_vm_start",
+        "proxy_on_configure",
+        "proxy_on_tick",
+        "proxy_on_queue_ready",
+        "proxy_on_done",
+        "proxy_on_log",
+        "proxy_on_delete",
+        "proxy_on_request_headers",
+        "proxy_on_request_body",
+        "proxy_on_request_trailers",
+        "proxy_on_response_headers",
+        "proxy_on_response_body",
+        "proxy_on_response_trailers",
+        "proxy_on_new_connection",
+        "proxy_on_downstream_data",
+        "proxy_on_downstream_connection_close",
+        "proxy_on_upstream_data",
+        "proxy_on_upstream_connection_close",
+        "proxy_on_http_call_response",
+      ],
+      "export-memory-name": "memory",
+    },
+  },
+)
