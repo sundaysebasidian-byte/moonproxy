@@ -106,7 +106,7 @@ fn hex_value(c : Char) -> Int? {
 /// (ASCII only), no empty segments, no trailing `/`, lower case.
 fn normalize_path(raw : String) -> String {
   let chars = raw.to_array()
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   let mut i = 0
   while i < chars.length() {
     let c = chars[i]
@@ -246,7 +246,7 @@ fn evaluate(policy : Policy, body : String, limit_field? : String = "max_tokens"
 
 ///|
 fn error_body(kind : String, reason : String) -> Bytes {
-  let j : Json = { "error": { "type": kind.to_json(), "message": reason.to_json() } }
+  let j : Json = { "error": { "type": Json::string(kind), "message": Json::string(reason) } }
   @utf8.encode(j.stringify())
 }
 

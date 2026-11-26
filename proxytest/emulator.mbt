@@ -919,3 +919,15 @@ pub fn HostEmulator::done_called(self : HostEmulator) -> Bool {
 fn path_key(b : Bytes) -> String {
   @utf8.decode_lossy(b)
 }
+
+///|
+pub extend LocalResponse with Debug::{to_repr}
+
+///|
+pub extend LocalResponse with Eq::{equal, not_equal}
+
+///|
+pub extend HttpCall with Debug::{to_repr}
+
+///|
+pub extend HttpCall with Eq::{equal, not_equal}

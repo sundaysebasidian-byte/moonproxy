@@ -181,3 +181,9 @@ impl TcpContext with on_log(_) {
 impl TcpContext with on_done(_) {
   ()
 }
+
+///|
+pub extend ErrorPolicy with Debug::{to_repr}
+
+///|
+pub extend ErrorPolicy with Eq::{equal, not_equal}

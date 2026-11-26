@@ -57,3 +57,12 @@ test "any number of client keys maps onto the configured buckets" {
   }
   inspect(keys.length() <= 8, content="true")
 }
+
+///|
+test "bucket numbers parse up to the Int64 limit" {
+  debug_inspect(decimal("1764121000123456789"), content="Some(1764121000123456789)")
+  debug_inspect(decimal("9223372036854775807"), content="Some(9223372036854775807)")
+  debug_inspect(decimal("9223372036854775808"), content="None")
+  debug_inspect(decimal("-1"), content="None")
+  debug_inspect(decimal(""), content="None")
+}

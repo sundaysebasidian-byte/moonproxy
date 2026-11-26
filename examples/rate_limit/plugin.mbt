@@ -159,9 +159,30 @@ fn Bucket::parse(b : Bytes) -> Bucket? {
   let s = @utf8.decode_lossy(b)
   let parts = s.split(":").collect()
   guard parts is [t, n] else { return None }
-  let tokens = @strconv.parse_int64(t.to_owned()) catch { _ => return None }
-  let nanos = @strconv.parse_int64(n.to_owned()) catch { _ => return None }
+  guard decimal(t) is Some(tokens) && decimal(n) is Some(nanos) else {
+    return None
+  }
   Some({ milli_tokens: tokens, at_nanos: nanos })
+}
+
+///|
+/// Non-negative decimal integer that fits an Int64 (timestamps in
+/// nanoseconds have 19 digits).
+fn decimal(s : StringView) -> Int64? {
+  if s.length() == 0 {
+    return None
+  }
+  let max = 9223372036854775807L
+  let mut v = 0L
+  for c in s {
+    guard c >= '0' && c <= '9' else { return None }
+    let d = (c.to_int() - '0'.to_int()).to_int64()
+    if v > (max - d) / 10L {
+      return None
+    }
+    v = v * 10L + d
+  }
+  Some(v)
 }
 
 ///|

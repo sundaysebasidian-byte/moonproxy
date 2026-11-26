@@ -33,7 +33,7 @@ impl @moonproxy.RootContext for AuthRoot with on_plugin_start(self, _) {
   }
   // Parse everything first: a rejected reconfiguration must leave the
   // previous, working key set in place.
-  let parsed : Map[String, String] = {}
+  let parsed : Map[String, String] = Map([])
   for key, consumer in keys {
     guard consumer is String(name) else {
       @moonproxy.log_error("api_key_auth: consumer of a key must be a string")

@@ -262,3 +262,78 @@ pub impl Show for LogLevel with output(self, logger) {
     },
   )
 }
+
+///|
+// Keep the derived and `Show` methods callable with dot syntax
+// (`status.to_string()`, `a == b`), which newer compilers no longer do
+// implicitly.
+pub extend Status with Debug::{to_repr}
+
+///|
+pub extend Status with Eq::{equal, not_equal}
+
+///|
+pub extend Status with Show::{output, to_string}
+
+///|
+pub extend HostError with Debug::{to_repr}
+
+///|
+pub extend HostError with Show::{output, to_string}
+
+///|
+pub extend Action with Debug::{to_repr}
+
+///|
+pub extend Action with Eq::{equal, not_equal}
+
+///|
+pub extend Action with Show::{output, to_string}
+
+///|
+pub extend LogLevel with Debug::{to_repr}
+
+///|
+pub extend LogLevel with Eq::{equal, not_equal}
+
+///|
+pub extend LogLevel with Compare::{compare, op_lt, op_le, op_gt, op_ge}
+
+///|
+pub extend LogLevel with Show::{output, to_string}
+
+///|
+pub extend BufferType with Debug::{to_repr}
+
+///|
+pub extend BufferType with Eq::{equal, not_equal}
+
+///|
+pub extend BufferType with Hash::{hash, hash_combine}
+
+///|
+pub extend MapType with Debug::{to_repr}
+
+///|
+pub extend MapType with Eq::{equal, not_equal}
+
+///|
+pub extend MapType with Hash::{hash, hash_combine}
+
+///|
+pub extend StreamType with Debug::{to_repr}
+
+///|
+pub extend StreamType with Eq::{equal, not_equal}
+
+///|
+pub extend MetricType with Debug::{to_repr}
+
+///|
+pub extend MetricType with Eq::{equal, not_equal}
+
+///|
+pub extend PeerType with Debug::{to_repr}
+
+///|
+pub extend PeerType with Eq::{equal, not_equal}
