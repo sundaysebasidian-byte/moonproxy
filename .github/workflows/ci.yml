@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: check and test (moon ${{ matrix.sdk }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [pinned, latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MoonBit
+        run: |
+          export MOON_HOME="$RUNNER_TEMP/moon"
+          if [ "${{ matrix.sdk }}" = pinned ]; then
+            python3 scripts/install-ci-sdk.py --dest "$MOON_HOME"
+          else
+            curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          fi
+          echo "MOON_HOME=$MOON_HOME" >> "$GITHUB_ENV"
+          echo "$MOON_HOME/bin" >> "$GITHUB_PATH"
+      - run: moon version --all
+      - name: Type-check every backend
+        run: |
+          for t in wasm wasm-gc js native; do moon check --target $t --deny-warn; done
+      - name: Unit tests (emulator) on wasm-gc, js and native
+        run: |
+          for t in wasm-gc js native; do moon test --target $t; done
+      - name: Generated files, formatting and interfaces are up to date
+        if: matrix.sdk == 'pinned'
+        run: |
+          python3 scripts/gen_exports.py --check
+          moon fmt --check
+          moon info
+          git add -A -N
+          git diff --exit-code
+
+  wasm:
+    name: build plugins and check the ABI (moon ${{ matrix.sdk }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [pinned, latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MoonBit
+        run: |
+          export MOON_HOME="$RUNNER_TEMP/moon"
+          if [ "${{ matrix.sdk }}" = pinned ]; then
+            python3 scripts/install-ci-sdk.py --dest "$MOON_HOME"
+          else
+            curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          fi
+          echo "MOON_HOME=$MOON_HOME" >> "$GITHUB_ENV"
+          echo "$MOON_HOME/bin" >> "$GITHUB_PATH"
+      - name: Build the example plugins
+        run: moon build --target wasm --release
+      - name: Collect modules and check exports and imports
+        run: |
+          mkdir -p plugins
+          for d in examples/*/; do
+            n=$(basename "$d")
+            f=$(find _build target -path "*/release/build/examples/$n/$n.wasm" 2>/dev/null | head -1)
+            test -n "$f" || { echo "no module for $n"; exit 1; }
+            cp "$f" "plugins/$n.wasm"
+            node scripts/check_wasm.cjs "plugins/$n.wasm"
+          done
+      - name: Drive the modules through the raw ABI (JS host, memory checks)
+        run: node scripts/ffi_test.cjs plugins
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugins-${{ matrix.sdk }}
+          path: plugins
+          retention-days: 3
+
+  envoy:
+    name: end-to-end in Envoy (moon ${{ matrix.sdk }})
+    needs: wasm
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [pinned, latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugins-${{ matrix.sdk }}
+          path: plugins
+      - run: docker pull -q envoyproxy/envoy:v1.34.1
+      - run: python3 e2e/run.py plugins
+
+  bench:
+    name: benchmark against the Rust SDK
+    needs: wasm
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugins-pinned
+          path: plugins
+      - name: Build the Rust baseline
+        working-directory: bench/rust_headers
+        run: |
+          rustup target add wasm32-wasip1
+          cargo build --release --locked --target wasm32-wasip1
+      - run: sudo apt-get install -y -q wrk && docker pull -q envoyproxy/envoy:v1.34.1
+      - run: python3 bench/run.py plugins/http_headers.wasm bench/rust_headers/target/wasm32-wasip1/release/rust_headers.wasm

@@ -1,0 +1,24 @@
+[package]
+name = "rust_headers"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Baseline for the benchmark: the same plugin as examples/http_headers,
+# written with the official proxy-wasm Rust SDK.
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+proxy-wasm = "0.2.2"
+log = "0.4"
+serde_json = "1"
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+panic = "abort"
+strip = "debuginfo"
