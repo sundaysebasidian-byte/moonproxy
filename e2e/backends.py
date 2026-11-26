@@ -9,6 +9,7 @@
 """
 import json
 import socketserver
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -116,10 +117,18 @@ class ThreadingTCP(socketserver.ThreadingTCPServer):
     daemon_threads = True
 
 
+class QuietHTTP(ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        # Envoy drops the upstream connection when a plugin ends the stream
+        # early (a rejected body, a reset); the backend's write then fails.
+        if not isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            super().handle_error(request, client_address)
+
+
 def start():
     servers = [
-        ThreadingHTTPServer(("127.0.0.1", 8081), Echo),
-        ThreadingHTTPServer(("127.0.0.1", 8082), Auth),
+        QuietHTTP(("127.0.0.1", 8081), Echo),
+        QuietHTTP(("127.0.0.1", 8082), Auth),
         ThreadingTCP(("127.0.0.1", 8083), TcpEcho),
     ]
     for s in servers:

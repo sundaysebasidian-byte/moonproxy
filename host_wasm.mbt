@@ -256,8 +256,18 @@ priv struct Ret {
 }
 
 ///|
+/// One scratch block for the whole VM, allocated on first use and never
+/// freed. A host call is synchronous and the only guest code it can run is
+/// `proxy_on_memory_allocate`, which never touches the block, so two `Ret`s
+/// are never live at once. This saves a malloc and a decref per host call.
+let ret_block : Ref[Int32] = { val: 0 }
+
+///|
 fn Ret::new() -> Ret {
-  let ptr = mem_malloc(16)
+  if ret_block.val == 0 {
+    ret_block.val = mem_malloc(16)
+  }
+  let ptr = ret_block.val
   for i in 0..<4 {
     store32(ptr + i * 4, 0)
   }
@@ -282,8 +292,8 @@ fn Ret::take_bytes(self : Ret) -> Bytes {
 }
 
 ///|
-fn Ret::free(self : Ret) -> Unit {
-  mem_free(self.ptr)
+fn Ret::free(_ : Ret) -> Unit {
+  // The block is reused; see `ret_block`.
 }
 
 ///|
