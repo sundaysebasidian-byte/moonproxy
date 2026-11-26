@@ -387,7 +387,7 @@ test "Pause on headers holds body and trailers until the plugin resumes" {
           })
           Pause
         },
-        req_body=fn(size, eos) raise {
+        req_body=fn(size, eos) {
           seen.push("body \{size} \{eos}")
           Continue
         },
@@ -441,7 +441,7 @@ test "FailClosed rejects the request when a body callback raises" {
   let id = emu.init_http()
   let _ = emu.call_on_request_headers(id, [])
   inspect(emu.call_on_request_body(id, b"x"), content="Pause")
-  inspect(emu.local_response(id).map(fn(r) { r.status_code }), content="Some(500)")
+  debug_inspect(emu.local_response(id).map(fn(r) { r.status_code }), content="Some(500)")
   inspect(emu.forwarded_request_body(id).length(), content="0")
 }
 
@@ -463,7 +463,7 @@ test "a raising callout callback never leaves the stream hanging" {
   let id = closed.init_http()
   let _ = closed.call_on_request_headers(id, [])
   closed.call_on_http_call_response(closed.http_calls()[0].token, [(":status", "200")], b"")
-  inspect(closed.local_response(id).map(fn(r) { r.status_code }), content="Some(500)")
+  debug_inspect(closed.local_response(id).map(fn(r) { r.status_code }), content="Some(500)")
   inspect(closed.request_resumes(id), content="0")
   let open = install(fn(_) { failing_callout() }, policy=FailOpen)
   let id2 = open.init_http()
@@ -536,15 +536,15 @@ test "an HTTP stream ends with log, then done, as in Envoy" {
   let order = []
   let emu = install(fn(_) {
     Fn::new(
-      done=fn() raise {
+      done=fn() {
         // Context::onDestroy runs after the filter chain is torn down.
         let h = @moonproxy.get_request_header(":path") catch {
           e => Some(e.to_string())
         }
-        order.push("done \{h}")
+        order.push("done \{opt(h)}")
       },
       log=fn() raise {
-        order.push("log \{@moonproxy.get_request_header(":path")}")
+        order.push("log \{opt(@moonproxy.get_request_header(":path"))}")
       },
     )
   })
@@ -703,7 +703,7 @@ impl @moonproxy.RootContext for Declining with new_http_context(self, _) {
 test "the plugin configuration is only served during on_plugin_start" {
   let seen = Ref("")
   let emu = install(fn(_) {
-    Fn::new(req_headers=fn() raise {
+    Fn::new(req_headers=fn() {
       let _ = @moonproxy.get_plugin_configuration() catch {
         e => {
           seen.val = e.to_string()
@@ -716,4 +716,12 @@ test "the plugin configuration is only served during on_plugin_start" {
   let id = emu.init_http()
   let _ = emu.call_on_request_headers(id, [])
   inspect(seen.val, content="get_plugin_configuration: NotFound")
+}
+
+///|
+fn opt(o : String?) -> String {
+  match o {
+    Some(s) => "Some(\{s})"
+    None => "None"
+  }
 }

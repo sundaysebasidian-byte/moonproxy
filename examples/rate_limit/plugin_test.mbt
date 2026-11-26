@@ -1,6 +1,6 @@
 ///|
 fn start(cfg : String) -> @proxytest.HostEmulator {
-  let cfg = cfg[:cfg.length() - 1].to_string() + ", \"key_header\": \"x-client-id\"}"
+  let cfg = cfg[:cfg.length() - 1].to_owned() + ", \"key_header\": \"x-client-id\"}"
   let emu = @proxytest.HostEmulator::new(plugin_config=@utf8.encode(cfg))
   assert_true(emu.start()) catch { _ => abort("start failed") }
   emu

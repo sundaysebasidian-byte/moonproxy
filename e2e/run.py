@@ -241,6 +241,7 @@ def main():
                                        "copy_back": ["x-user-id"], "fail_open": True}))
     backends.start()
     work = tempfile.mkdtemp()
+    os.chmod(work, 0o755)  # Envoy runs as an unprivileged user in the image
     with open(os.path.join(work, "envoy.json"), "w") as f:
         json.dump(ec.bootstrap(listeners), f, indent=1)
     log = open(os.path.join(work, "envoy.log"), "w")

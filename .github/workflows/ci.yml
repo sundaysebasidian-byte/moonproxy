@@ -113,7 +113,7 @@ jobs:
       - name: Build the Rust baseline
         working-directory: bench/rust_headers
         run: |
-          rustup target add wasm32-wasip1
-          cargo build --release --locked --target wasm32-wasip1
+          rustup target add wasm32-unknown-unknown
+          cargo build --release --locked --target wasm32-unknown-unknown
       - run: sudo apt-get install -y -q wrk && docker pull -q envoyproxy/envoy:v1.34.1
-      - run: python3 bench/run.py plugins/http_headers.wasm bench/rust_headers/target/wasm32-wasip1/release/rust_headers.wasm
+      - run: python3 bench/run.py plugins/http_headers.wasm bench/rust_headers/target/wasm32-unknown-unknown/release/rust_headers.wasm
