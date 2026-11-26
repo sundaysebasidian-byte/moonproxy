@@ -27,12 +27,20 @@
 | [api_key_auth](examples/api_key_auth/plugin.mbt) | API Key 鉴权，401/403，向上游传身份 | 直接回复、`FailClosed`、metrics |
 | [rate_limit](examples/rate_limit/plugin.mbt) | 按源 IP（或上游鉴权写入的 header）令牌桶限流，所有 worker 共享；客户端 key 哈希到固定数量的桶，内存有上限 | shared data + CAS 重试、属性 |
 | [ext_authz](examples/ext_authz/plugin.mbt) | 外部鉴权服务，通过则回填身份 header | HTTP callout、暂停/恢复 |
-| [pii_mask](examples/pii_mask/plugin.mbt) | 响应里的邮箱、手机号（含 `+86`）、银行卡号（Luhn）、身份证号（校验位）脱敏；按字节处理，长度不变；去掉 `accept-encoding` 防止压缩绕过 | 缓冲整个 body、改写 body |
-| [ai_guard](examples/ai_guard/plugin.mbt) | OpenAI 兼容接口（chat/completions、completions、responses）的模型白名单、敏感词拦截、token 上限（非数字的上限直接拒绝）；路径先规范化，`%XX`、`;参数`、重复或结尾的 `/` 绕不过去。body 在判定前不会到达上游，但请求头会先到（见插件文档） | 缓冲、解析、改写 JSON body |
+| [pii_mask](examples/pii_mask/plugin.mbt) | 响应里的邮箱、手机号（含 `+86`、空格或连字符分组）、银行卡号（Luhn）、18/15 位身份证号（校验位、日期）脱敏；按字节处理，长度不变；去掉 `accept-encoding` 和 `range` 防止绕过；SSE（`text/event-stream`）逐个事件脱敏放行 | 缓冲 body、改写 body、流式处理 |
+| [ai_guard](examples/ai_guard/plugin.mbt) | OpenAI 兼容接口（chat/completions、completions、responses）的模型白名单、敏感词拦截、token 上限（非数字的上限直接拒绝）、`n` / `best_of` 上限；路径先规范化，`%XX`、`;参数`、`.` / `..`、反斜杠、重复或结尾的 `/` 绕不过去。body 在判定前不会到达上游，但请求头会先到（见插件文档） | 缓冲、解析、改写 JSON body |
 | [tcp_quota](examples/tcp_quota/plugin.mbt) | 每连接流量统计，超额断开（断开后不再转发） | TCP 过滤器、属性 |
 | [minimal](examples/minimal/plugin.mbt) | 下面“快速开始”里的代码原样放在这里 | 保证 README 示例能编译、能过测试、能在 Envoy 里跑 |
 
 ## 快速开始
+
+### 0. 安装
+
+```bash
+moon add sundaysebasidian-byte/moonproxy
+```
+
+插件包的 `moon.pkg` 里导入 `sundaysebasidian-byte/moonproxy`（写单测再导入 `sundaysebasidian-byte/moonproxy/proxytest`），再用下面第 1 步末尾的 `gen_exports.py` 生成 proxy-wasm 导出函数。CI 固定的工具链版本见 [toolchain.lock.json](toolchain.lock.json)，同时也用最新版 MoonBit 跑全部检查。
 
 ### 1. 写插件
 
@@ -74,7 +82,7 @@ import {
 然后生成 ABI 导出（`exports.mbt`，以及 `moon.pkg` 里 `options(link: ...)` 的 wasm 导出列表；`moon.pkg` 里其他内容会保留）。脚本只依赖 Python 3 标准库，从本仓库复制一份即可：
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/sundaysebasidian-byte/moonproxy/main/scripts/gen_exports.py
+curl -fsSLO https://raw.githubusercontent.com/sundaysebasidian-byte/moonproxy/v0.1.0/scripts/gen_exports.py
 python3 gen_exports.py path/to/your_plugin
 ```
 
@@ -160,10 +168,29 @@ CI（[ci.yml](.github/workflows/ci.yml)）为每次提交配置了以下检查�
 
 - 只支持 `wasm` 后端（proxy-wasm 要求线性内存）；其他后端可以编译和跑单测，但不能产出插件。
 - 暂不支持 gRPC callout、foreign function；`Action` 只有 `Continue` / `Pause`，与 Rust SDK 一致。
+- **只在模拟宿主里验证过的功能**：共享队列、`on_tick` 定时器、gauge / histogram 指标、trailers（HTTP/2）。它们的 ABI 调用与已在 Envoy 中跑通的功能走同一套 FFI，但没有放进 Envoy 端到端测试，可能存在与真实 Envoy 不一致的地方。
 - 模拟宿主没有模拟 Envoy 的缓冲上限（超限时 Envoy 回 413 或重置流），也没有模拟 vm_config 里的 `allow_on_headers_stop_iteration` 开关。
 - shared data 没有过期机制，新 key 的第一次写入无法做条件写，这两点是 proxy-wasm 本身的限制（见 rate_limit 示例的说明）。
 - 线性内存 FFI 依赖 MoonBit 运行时的 `$moonbit.gc.malloc` / `decref`（与 wit-bindgen 的 MoonBit 绑定相同），编译器若改动这部分需要跟进；CI 用固定版本和最新版两个工具链各构建并在 Envoy 中跑一遍来发现这类变化。
-- 端到端测试只覆盖原生 Envoy，没有在 Istio、Higress 上验证。
+- 端到端测试只覆盖原生 Envoy v1.34，没有在其他 Envoy 版本、Istio、Higress 上验证。
+- 示例插件是可运行的参考实现，不是完整产品：
+  - pii_mask：普通响应要缓冲整个 body 才能脱敏（受 Envoy 缓冲上限约束）；SSE 按事件放行，单个事件过大同样受上限约束。规则基于格式和校验位，15 位数字只要地区码和日期合法就会被当作旧身份证，可能误伤；没有识别姓名、地址等非数字信息。
+  - ai_guard：只检查请求，不检查模型输出；敏感词是子串匹配。建议同时打开 Envoy 自身的 `normalize_path` / `merge_slashes`。
+  - rate_limit：桶号用带种子的 FNV-1a，种子不可预测时能防止离线挑 key，但不是密码学哈希；按 IPv6 /64 分组时，同一网段的用户共用额度。
+
+## 性能
+
+[bench/run.py](bench/run.py) 在同一个 Envoy v1.34（2 个 worker）里放三个监听器：不加插件、加 MoonBit 版 `http_headers`、加用官方 [proxy-wasm Rust SDK](https://github.com/proxy-wasm/proxy-wasm-rust-sdk) 写的同功能插件（[bench/rust_headers](bench/rust_headers)）。每个请求插件读取方法和路径写日志、给响应加一个配置里指定的 header；Envoy 用 `direct_response` 直接回复，不经过后端。wrk 2 线程 32 连接，每轮 10 秒，三种情况轮换顺序跑 5 轮，取中位数。下面是 CI 一次运行（GitHub Actions ubuntu-24.04 runner）的结果：
+
+| plugin | req/s（中位数） | 最小-最大 | 相对无插件 | p50 | p99 | 非 2xx | .wasm 体积 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 无插件 | 43,528 | 42,897-44,591 | 100.0% | 0.71 ms | 1.19 ms | 0 | - |
+| moonproxy（MoonBit） | 24,555 | 23,463-24,775 | 56.4% | 1.31 ms | 2.02 ms | 0 | 110.9 KiB |
+| proxy-wasm Rust SDK | 30,403 | 30,001-30,881 | 69.8% | 1.03 ms | 1.71 ms | 0 | 185.3 KiB |
+
+（提交 dd44691 的 CI 运行。另一次在较快 runner 上的运行：无插件 135,204、MoonBit 79,753（59.0%）、Rust 100,382（74.2%）req/s。）
+
+GitHub 的 runner 之间速度相差可达 3 倍，绝对值没有可比性；可比的是同一次运行里三者的比值。按吞吐倒数估算，上表这次运行里插件给每个请求增加的时间 MoonBit 约 17.8 µs、Rust 约 9.9 µs，即 MoonBit 版的额外开销约为 Rust 版的 1.8 倍；MoonBit 版的 `.wasm` 体积约为 Rust 版的 60%。吞吐差距还没有做逐项剖析，是后续优化的重点。每次提交的结果都在 CI 的 benchmark 任务日志里。
 
 ## 许可证
 

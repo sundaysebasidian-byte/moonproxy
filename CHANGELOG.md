@@ -22,6 +22,17 @@ First release.
   lookup, CAS conflict injection).
 - Examples: http_headers, api_key_auth, rate_limit, ext_authz, pii_mask,
   ai_guard, tcp_quota, minimal.
+  - pii_mask: grouped (space or hyphen) and `+86` numbers, 15-digit IDs,
+    bodies without `content-type`, `range` stripped, server-sent events
+    masked and released event by event.
+  - ai_guard: dot segments, backslashes and `;` parameters normalised before
+    matching; `n` / `best_of` capped by `max_choices`.
+  - rate_limit: bucket numbers use a seeded FNV-1a with the seed shared
+    through shared data; IPv6 clients grouped by /64.
+  - tcp_quota: rejects fractional or negative `max_bytes`; data held after
+    the cut is not counted twice.
+- `proxytest` drops request body and trailers after a local response, as
+  Envoy does.
 - Tooling: export generator, wasm ABI checker, a JS proxy-wasm host that
   drives the compiled modules through the raw ABI (memory and reference
   counting checks), Envoy end-to-end test, benchmark against the proxy-wasm
