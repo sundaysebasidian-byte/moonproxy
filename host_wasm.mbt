@@ -260,7 +260,7 @@ priv struct Ret {
 /// freed. A host call is synchronous and the only guest code it can run is
 /// `proxy_on_memory_allocate`, which never touches the block, so two `Ret`s
 /// are never live at once. This saves a malloc and a decref per host call.
-let ret_block : Ref[Int32] = { val: 0 }
+let ret_block : Ref[Int32] = { val: 0, }
 
 ///|
 fn Ret::new() -> Ret {
